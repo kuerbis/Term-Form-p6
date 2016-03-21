@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.003';
+my $VERSION = '0.004';
 
 use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
@@ -805,7 +805,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.003
+Version 0.004
 
 =head1 SYNOPSIS
 
@@ -885,11 +885,17 @@ Set a initial value of input.
 
 =item1 no_echo
 
-=item2 if set to C<0>, the input is echoed on the screen.
+=item2 -
 
-=item2 if set to C<1>, "C<*>" are displayed instead of the characters.
+if set to C<0>, the input is echoed on the screen.
 
-=item2 if set to C<2>, no output is shown apart from the prompt string.
+=item2 -
+
+if set to C<1>, "C<*>" are displayed instead of the characters.
+
+=item2 -
+
+if set to C<2>, no output is shown apart from the prompt string.
 
 default: C<0>
 
