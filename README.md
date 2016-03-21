@@ -8,7 +8,7 @@ Term::Form - Read lines from STDIN.
 VERSION
 =======
 
-Version 0.001
+Version 0.002
 
 SYNOPSIS
 ========
@@ -86,11 +86,6 @@ The fist argument is the prompt string.
 
 The optional second argument is a hash to set the different options. The keys/options are
 
-over
-====
-
-
-
   * default
 
 Set a initial value of input.
@@ -105,11 +100,6 @@ Set a initial value of input.
 
 default: `0`
 
-back
-====
-
-
-
 fill_form
 ---------
 
@@ -118,11 +108,6 @@ fill_form
 The first argument is an array of arrays. The arrays have 1 or 2 elements: the first element is the key and the optional second element is the value. The key is used as the prompt string for the "readline", the value is used as the default value for the "readline" (initial value of input).
 
 The optional second argument is a hash. The keys/options are
-
-over
-====
-
-
 
   * prompt
 
@@ -159,11 +144,6 @@ Set the name of the "back" menu entry.
 The "back" menu entry is not available if *back* is not defined or set to an empty string.
 
 default: undefined
-
-back
-====
-
-
 
 To close the form and get the modified list select the "confirm" menu entry. If the "back" menu entry is chosen to close the form, `fill_form` returns nothing.
 

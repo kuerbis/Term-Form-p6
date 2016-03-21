@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.001';
+my $VERSION = '0.002';
 
 use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
@@ -805,7 +805,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.001
+Version 0.002
 
 =head1 SYNOPSIS
 
@@ -879,13 +879,11 @@ The fist argument is the prompt string.
 
 The optional second argument is a hash to set the different options. The keys/options are
 
-=over
-
-=item default
+=item1 default
 
 Set a initial value of input.
 
-=item no_echo
+=item1 no_echo
 
 - if set to C<0>, the input is echoed on the screen.
 
@@ -894,8 +892,6 @@ Set a initial value of input.
 - if set to C<2>, no output is shown apart from the prompt string.
 
 default: C<0>
-
-=back
 
 =head2 fill_form
 
@@ -907,15 +903,13 @@ value for the "readline" (initial value of input).
 
 The optional second argument is a hash. The keys/options are
 
-=over
-
-=item prompt
+=item1 prompt
 
 If I<prompt> is set, a main prompt string is shown on top of the output.
 
 default: undefined
 
-=item auto_up
+=item1 auto_up
 
 With I<auto_up> set to C<0> or C<1> pressing C<ENTER> moves the cursor to the next line if the cursor is on a
 "readline". If the last "readline" row is reached, the cursor jumps to the first "readline" row if C<ENTER> was pressed.
@@ -926,7 +920,7 @@ With I<auto_up> set to C<2> C<ENTER> moves the cursor to the top menu entry if t
 
 default: C<0>
 
-=item ro
+=item1 ro
 
 Set form-rows to readonly.
 
@@ -934,21 +928,19 @@ Expected value: an array with the indexes of the rows which should be readonly.
 
 default: empty array
 
-=item confirm
+=item1 confirm
 
 Set the name of the "confirm" menu entry.
 
 default: C<E<lt>E<lt>>
 
-=item back
+=item1 back
 
 Set the name of the "back" menu entry.
 
 The "back" menu entry is not available if I<back> is not defined or set to an empty string.
 
 default: undefined
-
-=back
 
 To close the form and get the modified list select the "confirm" menu entry. If the "back" menu entry is chosen to close
 the form, C<fill_form> returns nothing.
