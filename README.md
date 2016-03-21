@@ -8,7 +8,7 @@ Term::Form - Read lines from STDIN.
 VERSION
 =======
 
-Version 0.002
+Version 0.003
 
 SYNOPSIS
 ========
@@ -92,11 +92,11 @@ Set a initial value of input.
 
   * no_echo
 
-- if set to `0`, the input is echoed on the screen.
+  * if set to `0`, the input is echoed on the screen.
 
-- if set to `1`, "`*`" are displayed instead of the characters.
+  * if set to `1`, "`*`" are displayed instead of the characters.
 
-- if set to `2`, no output is shown apart from the prompt string.
+  * if set to `2`, no output is shown apart from the prompt string.
 
 default: `0`
 
