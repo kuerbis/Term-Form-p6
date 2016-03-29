@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.005';
+my $VERSION = '0.006';
 
 use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
@@ -17,6 +17,7 @@ constant KEY_TAB    = -0x09;
 constant KEY_RETURN = -0x0a;
 constant CONTROL_K  = -0x0b;
 constant CONTROL_U  = -0x15;
+constant KEY_ESC    = -0x1b;
 
 
 has %.o_global;
@@ -53,7 +54,7 @@ has Int $!pages;
 
 method new ( %o_global? ) {
     my %valid = (
-        mark_curr => '<[ 0 1 ]>', ####
+        mark_curr => '<[ 0 1 ]>', #
         auto_up   => '<[ 0 1 2 ]>',
         no_echo   => '<[ 0 1 2 ]>',
         back      => 'Str',
@@ -129,9 +130,13 @@ submethod DESTROY () {
 }
 
 
-sub read_line ( $prompt, %opt? ) is export { return Term::Form.new().read_line( $prompt, %opt ) }
+multi readline ( $prompt, $default ) is export { return Term::Form.new().readline( $prompt, $default ) }
+multi readline ( $prompt, %opt? )    is export { return Term::Form.new().readline( $prompt, %opt ) }
 
-method read_line ( $prompt = ': ', %!o? ) {
+multi method readline ( $prompt, $default ) { self!_readline( $prompt, { default => $default } ); }
+multi method readline ( $prompt, %opt? )    { self!_readline( $prompt, %opt ); }
+
+method !_readline ( $prompt = ': ', %!o? ) {
     my %valid = (
         no_echo => '<[ 0 1 2 ]>',
         default => 'Str',
@@ -151,6 +156,8 @@ method read_line ( $prompt = ': ', %!o? ) {
     @!list = ( [ $prompt, $str ] );
     my Int $pos = $str.chars;
     self!_init_term();
+    my $term_w = getmaxx( $!win );
+    my $term_h = getmaxy( $!win );
     my Int $beep;
 
     GET_KEY: loop {
@@ -158,7 +165,6 @@ method read_line ( $prompt = ': ', %!o? ) {
             beep();
             $beep = 0;
         }
-        my Int $term_w = getmaxx( $!win ); ##
         $!avail_w = $term_w - 1; #
         $!val_w = $!avail_w - ( $!key_w + $!sep_w );
         self!_print_readline( $str, 0, $pos );
@@ -167,7 +173,7 @@ method read_line ( $prompt = ': ', %!o? ) {
         WAIT: loop {
             my Int $ct = get_wch( $key );
             if $ct == ERR {
-                sleep 0.02;
+                sleep 0.01;
                 next WAIT;
             }
             elsif $ct != KEY_CODE_YES {
@@ -175,13 +181,19 @@ method read_line ( $prompt = ': ', %!o? ) {
             }
             last WAIT;
         }
+        my $tmp_term_w = getmaxx( $!win );
+        my $tmp_term_h = getmaxy( $!win );
+        if $tmp_term_w != $term_w || $tmp_term_h != $term_h {
+            ( $term_w, $term_h ) = ( $tmp_term_w, $tmp_term_h );
+            next GET_KEY;
+        }
 
         given $key {
             #when ! $key.defined {
             #    self!_end_term();
             #    die "EOT: $!";#
             #}
-            when KEY_TAB {
+            when KEY_ESC | KEY_TAB {
                 next GET_KEY;
             }
             when KEY_BACKSPACE | KEY_BTAB | CONTROL_H {
@@ -273,15 +285,18 @@ method read_line ( $prompt = ': ', %!o? ) {
 
 
 method !_print_readline ( Str $str is copy, Int $row, Int $pos is copy ) {
-    my $n = 1;
+    my $n = min 20, $!val_w div 3;
     my ( $b, $e );
     while print_columns( $str ) > $!val_w {
-        if print_columns( $str.substr( 0, $pos ) ) > $!val_w / 4 {
+        #if print_columns( $str.substr( 0, $pos ) ) > $!val_w / 4 {
+        if $str.substr( 0, $pos ).chars > $!val_w / 4 {
+            $n = min $n, ( $pos - 1 ); #
             $str.substr-rw( 0, $n ) = '';
             $pos -= $n;
             $b = 1;
         }
         else {
+            $n = min $n, $str.chars - ( $pos + 1 ) ; #
             $str.substr-rw( *-$n, $n ) = '';
             $e = 1;
         }
@@ -292,7 +307,7 @@ method !_print_readline ( Str $str is copy, Int $row, Int $pos is copy ) {
     if $e {
         $str.substr-rw( $str.chars, 1 ) = '>'; ##
     }
-    
+
     my $key = self!_prepare_key( $!idx );
     if %!o.<mark_curr> {
         attron( A_UNDERLINE );
@@ -500,9 +515,9 @@ method !_print_previous_page {
 }
 
 
-sub fill_form ( @list, %opt? ) is export { return Term::Form.new().fill_form( @list, %opt ) }
+sub fillform ( @list, %opt? ) is export { return Term::Form.new().fillform( @list, %opt ) }
 
-method fill_form ( @orig_list, %!o? ) {
+method fillform ( @orig_list, %!o? ) {
     my %valid = (
         prompt    => 'Str',
         back      => 'Str',
@@ -560,7 +575,7 @@ method fill_form ( @orig_list, %!o? ) {
         WAIT: loop {
             my Int $ct = get_wch( $key );
             if $ct == ERR {
-                sleep 0.02;
+                sleep 0.01;
                 next WAIT;
             }
             elsif $ct != KEY_CODE_YES {
@@ -568,24 +583,23 @@ method fill_form ( @orig_list, %!o? ) {
             }
             last WAIT;
         }
-        #if ! $key.defined {
-        #    self!_end_term();
-        #    die "EOT: $!";#
-        #}
-        if $key == KEY_TAB {
-            next;
-        }
-
         my $tmp_term_w = getmaxx( $!win );
         my $tmp_term_h = getmaxy( $!win );
-        if $tmp_term_w != $term_w || $tmp_term_h != $term_h && $tmp_term_h < @!list.elems + 1 {
+        if $tmp_term_w != $term_w || $tmp_term_h != $term_h && $tmp_term_h {
             ( $term_w, $term_h ) = ( $tmp_term_w, $tmp_term_h );
             self!_prepare_size( $term_w, $term_h );
             self!_write_first_screen( 1 );
             ( $str, $pos ) = self!_str_and_pos();
+            next LINE; #
         }
-
         given $key {
+            #when ! $key.defined {
+            #    self!_end_term();
+            #    die "EOT: $!";#
+            #}
+            when KEY_ESC | KEY_TAB {
+                next;
+            }
             when KEY_BACKSPACE | KEY_BTAB | CONTROL_H {
                 if $locked {
                     $beep = 1;
@@ -805,7 +819,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.005
+Version 0.006
 
 =head1 SYNOPSIS
 
@@ -821,25 +835,25 @@ Version 0.005
 
     # Functional interface:
 
-    my $line = read_line( 'Prompt: ', { default => 'abc' } );
+    my $line = readline( 'Prompt: ', { default => 'abc' } );
 
-    my @filled_form = fill_form( @aoa, { auto_up => 0 } );
+    my @filled_form = fillform( @aoa, { auto_up => 0 } );
 
 
     # OO interface:
 
     my $new = Term::Form.new();
 
-    $line = $new.read_line( 'Prompt: ', { default => 'abc' } );
+    $line = $new.readline( 'Prompt: ', { default => 'abc' } );
 
-    $filled_form = $new.fill_form( @aoa, { auto_up => 0 } );
+    $filled_form = $new.fillform( @aoa, { auto_up => 0 } );
 
 =head1 DESCRIPTION
 
-C<read_line> reads a line from STDIN. As soon as C<Return> is pressed C<read_line> returns the read string without the
+C<readline> reads a line from STDIN. As soon as C<Return> is pressed C<readline> returns the read string without the
 newline character - so no C<chomp> is required.
 
-C<fill_form> reads a list of lines from STDIN.
+C<fillform> reads a list of lines from STDIN.
 
 =head2 Keys
 
@@ -859,7 +873,7 @@ C<Home> or C<Strg-A>: Move to the start of the line.
 
 C<End> or C<Strg-E>: Move to the end of the line.
 
-Only in C<fill_form>:
+Only in C<fillform>:
 
 C<Up-Arrow>: Move up one row.
 
@@ -871,13 +885,17 @@ C<Page-Down> or C<Strg-F>: Move forward one page.
 
 =head1 ROUTINES
 
-=head2 read_line
+=head2 readline
 
-C<read_line> reads a line from STDIN.
+C<readline> reads a line from STDIN.
 
 The fist argument is the prompt string.
 
 The optional second argument is a hash to set the different options. The keys/options are
+
+
+With the optional second argument it can be passed the default value (see option I<default>) as string or it can be
+passed the options as a hash. The options are
 
 =item1 default
 
@@ -893,9 +911,9 @@ Set a initial value of input.
 
 default: C<0>
 
-=head2 fill_form
+=head2 fillform
 
-C<fill_form> reads a list of lines from STDIN.
+C<fillform> reads a list of lines from STDIN.
 
 The first argument is an array of arrays. The arrays have 1 or 2 elements: the first element is the key and the optional
 second element is the value. The key is used as the prompt string for the "readline", the value is used as the default
@@ -943,7 +961,7 @@ The "back" menu entry is not available if I<back> is not defined or set to an em
 default: undefined
 
 To close the form and get the modified list select the "confirm" menu entry. If the "back" menu entry is chosen to close
-the form, C<fill_form> returns nothing.
+the form, C<fillform> returns nothing.
 
 =head1 REQUIREMENTS
 

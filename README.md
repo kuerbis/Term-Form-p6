@@ -8,7 +8,7 @@ Term::Form - Read lines from STDIN.
 VERSION
 =======
 
-Version 0.005
+Version 0.006
 
 SYNOPSIS
 ========
@@ -25,25 +25,25 @@ SYNOPSIS
 
     # Functional interface:
 
-    my $line = read_line( 'Prompt: ', { default => 'abc' } );
+    my $line = readline( 'Prompt: ', { default => 'abc' } );
 
-    my @filled_form = fill_form( @aoa, { auto_up => 0 } );
+    my @filled_form = fillform( @aoa, { auto_up => 0 } );
 
 
     # OO interface:
 
     my $new = Term::Form.new();
 
-    $line = $new.read_line( 'Prompt: ', { default => 'abc' } );
+    $line = $new.readline( 'Prompt: ', { default => 'abc' } );
 
-    $filled_form = $new.fill_form( @aoa, { auto_up => 0 } );
+    $filled_form = $new.fillform( @aoa, { auto_up => 0 } );
 
 DESCRIPTION
 ===========
 
-`read_line` reads a line from STDIN. As soon as `Return` is pressed `read_line` returns the read string without the newline character - so no `chomp` is required.
+`readline` reads a line from STDIN. As soon as `Return` is pressed `readline` returns the read string without the newline character - so no `chomp` is required.
 
-`fill_form` reads a list of lines from STDIN.
+`fillform` reads a list of lines from STDIN.
 
 Keys
 ----
@@ -64,7 +64,7 @@ Keys
 
 `End` or `Strg-E`: Move to the end of the line.
 
-Only in `fill_form`:
+Only in `fillform`:
 
 `Up-Arrow`: Move up one row.
 
@@ -77,14 +77,16 @@ Only in `fill_form`:
 ROUTINES
 ========
 
-read_line
----------
+readline
+--------
 
-`read_line` reads a line from STDIN.
+`readline` reads a line from STDIN.
 
 The fist argument is the prompt string.
 
 The optional second argument is a hash to set the different options. The keys/options are
+
+With the optional second argument it can be passed the default value (see option *default*) as string or it can be passed the options as a hash. The options are
 
   * default
 
@@ -100,10 +102,10 @@ Set a initial value of input.
 
 default: `0`
 
-fill_form
----------
+fillform
+--------
 
-`fill_form` reads a list of lines from STDIN.
+`fillform` reads a list of lines from STDIN.
 
 The first argument is an array of arrays. The arrays have 1 or 2 elements: the first element is the key and the optional second element is the value. The key is used as the prompt string for the "readline", the value is used as the default value for the "readline" (initial value of input).
 
@@ -145,7 +147,7 @@ The "back" menu entry is not available if *back* is not defined or set to an emp
 
 default: undefined
 
-To close the form and get the modified list select the "confirm" menu entry. If the "back" menu entry is chosen to close the form, `fill_form` returns nothing.
+To close the form and get the modified list select the "confirm" menu entry. If the "back" menu entry is chosen to close the form, `fillform` returns nothing.
 
 REQUIREMENTS
 ============

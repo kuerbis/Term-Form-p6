@@ -1,6 +1,12 @@
 Revision history for Term::Form
 
 
+0.006   2016-03-29
+        - readline is now a multimethod
+        - refactored window-size-changed
+        - refactored string-to-long
+        - update documentation
+
 0.005   2016-03-21
         - Pod fix
 
