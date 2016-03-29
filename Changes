@@ -2,6 +2,7 @@ Revision history for Term::Form
 
 
 0.006   2016-03-29
+        - renamed 'read_line' to 'readline' and 'fill_form' to 'fillform'
         - readline is now a multimethod
         - refactored window-size-changed
         - refactored string-to-long
