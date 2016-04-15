@@ -8,7 +8,7 @@ Term::Form - Read lines from STDIN.
 VERSION
 =======
 
-Version 0.006
+Version 0.007
 
 SYNOPSIS
 ========

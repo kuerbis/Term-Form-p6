@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.006';
+my $VERSION = '0.007';
 
 use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
@@ -52,7 +52,7 @@ has Int $!pages;
 
 
 
-method new ( %o_global? ) {
+method new ( %o_global?, $g_win=Term::Choose::NCurses::WINDOW ) {
     my %valid = (
         mark_curr => '<[ 0 1 ]>', #
         auto_up   => '<[ 0 1 2 ]>',
@@ -819,7 +819,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.006
+Version 0.007
 
 =head1 SYNOPSIS
 

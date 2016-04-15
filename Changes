@@ -1,6 +1,9 @@
 Revision history for Term::Form
 
 
+0.007   2016-04-15
+        - no changes - enable travis test
+
 0.006   2016-03-29
         - renamed 'read_line' to 'readline' and 'fill_form' to 'fillform'
         - readline is now a multimethod
