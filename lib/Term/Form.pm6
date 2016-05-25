@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.009';
+my $VERSION = '0.010';
 
 use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
@@ -66,7 +66,7 @@ method new ( %o_global?, $g_win=Term::Choose::NCurses::WINDOW ) {
     );
     _validate_options( %o_global, %valid );
     _set_defaults( %o_global );
-    self.bless( :%o_global );
+    self.bless( :%o_global, :$g_win );
 }
 
 sub _set_defaults ( %opt ) {
@@ -167,6 +167,7 @@ method !_readline ( $key = ': ', %!o? ) {
     $!avail_w = $term_w - 1; #
     $!val_w = $!avail_w - ( $!key_w + $!sep_w );
     self!_nr_header_lines();
+    clear();
     if $!header.defined {
         mvaddstr( 0, 0, $!header );
     }
@@ -199,8 +200,8 @@ method !_readline ( $key = ': ', %!o? ) {
             ( $term_w, $term_h ) = ( $tmp_term_w, $tmp_term_h );
             $!avail_w = $term_w - 1; #
             $!val_w = $!avail_w - ( $!key_w + $!sep_w );
-            clear();
             self!_nr_header_lines();
+            clear();
             if $!header.defined {
                 mvaddstr( 0, 0, $!header );
             }
@@ -424,12 +425,11 @@ method !_nr_header_lines {
         return;
     }
     $!header = line-fold( %!o<header>, $!avail_w, '', '' );
-    #$!header.=subst( / \n $ /, '' );
-    #if $!header !~~ / \n / {
-    #    $!nr_header_lines = 1;
-    #    return;
-    #}
     my $matches = $!header.subst-mutate( / \n /, "\n\r", :g ); #
+    if ! $matches {
+        $!nr_header_lines = 1;
+        return;
+    }
     $!nr_header_lines = $matches.elems + 1;
 }
 
@@ -843,7 +843,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.009
+Version 0.010
 
 =head1 SYNOPSIS
 
