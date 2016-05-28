@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.010';
+my $VERSION = '0.011';
 
 use Term::Choose::NCurses :all;
 use Term::Choose::LineFold :all;
@@ -61,7 +61,6 @@ method new ( %o_global?, $g_win=Term::Choose::NCurses::WINDOW ) {
         confirm   => 'Str',
         default   => 'Str',
         header    => 'Str',
-        prompt    => 'Str',     # DEPRECATED
         ro        => 'Array',
     );
     _validate_options( %o_global, %valid );
@@ -102,9 +101,6 @@ sub _validate_options ( %opt, %valid, Int $list_end? ) {
             die "$key => '$value' is not a valid value.";
         }
     }
-
-    %opt<header> = %opt<prompt> // Str if ! %opt<header>.defined;   # DEPRECATED
-
 }
 
 
@@ -120,8 +116,10 @@ method !_init_term {
     noecho();
     cbreak;
     keypad( $!win, True );
-    #nodelay( $!win, False );
     curs_set( 1 );
+    # disable mouse:
+    my Array[int32] $old;
+    my $s = mousemask( 0, $old );
 }
 
 method !_end_term {
@@ -145,7 +143,6 @@ method !_readline ( $key = ': ', %!o? ) {
         no-echo => '<[ 0 1 2 ]>',
         default => 'Str',
         header  => 'Str',
-        prompt  => 'Str',       # DEPRECATED
     );
     _validate_options( %!o, %valid );
     for %valid.keys -> $key {
@@ -546,13 +543,11 @@ method fillform ( @orig_list, %!o? ) {
         back      => 'Str',
         confirm   => 'Str',
         header    => 'Str',
-        prompt    => 'Str',         # DEPRECATED
         ro        => 'Array',
     );
     @!list = @orig_list;
     _validate_options( %!o, %valid, @!list.end ); # 
     for %valid.keys -> $key {
-        next if $key eq 'prompt';   # DEPRECATED
         %!o{$key} //= %!o_global{$key};
     }
 
@@ -843,7 +838,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.010
+Version 0.011
 
 =head1 SYNOPSIS
 

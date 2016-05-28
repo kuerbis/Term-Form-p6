@@ -1,9 +1,13 @@
 Revision history for Term::Form
 
 
+0.011   2016-05-28
+        - Remove deprecated option 'prompt'
+        - Disable mouse
+
 0.010   2016-05-25
-        - Bugfix in the number of header lines.
-        - Clear the screen at the beginning.
+        - Bugfix in the number of header lines
+        - Clear the screen at the beginning
 
 0.009   2016-05-15
         - Replaced underscores with hyphens in option- and routine-names
