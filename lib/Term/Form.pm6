@@ -1,10 +1,10 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.011';
+my $VERSION = '0.012';
 
-use Term::Choose::NCurses :all;
-use Term::Choose::LineFold :all;
+use Term::Choose::NCurses;
+use Term::Choose::LineFold;
 
 
 constant CONTROL_A  = -0x01;
@@ -132,8 +132,8 @@ submethod DESTROY () {
 }
 
 
-multi readline ( $key, $default ) is export( :DEFAULT, :readline ) { return Term::Form.new().readline( $key, $default ) }
-multi readline ( $key, %opt? )    is export( :DEFAULT, :readline ) { return Term::Form.new().readline( $key, %opt ) }
+multi readline ( $key, $default ) is export { return Term::Form.new().readline( $key, $default ) }
+multi readline ( $key, %opt? )    is export { return Term::Form.new().readline( $key, %opt ) }
 
 multi method readline ( $key, $default ) { return self!_readline( $key, { default => $default } ) }
 multi method readline ( $key, %opt? )    { return self!_readline( $key, %opt ) }
@@ -545,7 +545,7 @@ method fillform ( @orig_list, %!o? ) {
         header    => 'Str',
         ro        => 'Array',
     );
-    @!list = @orig_list;
+    @!list = @orig_list.deepmap( -> $e is copy { $e } );
     _validate_options( %!o, %valid, @!list.end ); # 
     for %valid.keys -> $key {
         %!o{$key} //= %!o_global{$key};
@@ -838,7 +838,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.011
+Version 0.012
 
 =head1 SYNOPSIS
 
