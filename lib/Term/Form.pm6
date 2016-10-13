@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.012';
+my $VERSION = '0.013';
 
 use Term::Choose::NCurses;
 use Term::Choose::LineFold;
@@ -534,7 +534,7 @@ method !_print_previous_page {
 }
 
 
-sub fillform ( @list, %opt? ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, %opt ) }
+sub fillform ( @list, %opt? ) is export { return Term::Form.new().fillform( @list, %opt ) }
 
 method fillform ( @orig_list, %!o? ) {
     my %valid = (
@@ -838,7 +838,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.012
+Version 0.013
 
 =head1 SYNOPSIS
 
