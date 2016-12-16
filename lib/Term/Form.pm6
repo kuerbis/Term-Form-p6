@@ -1,10 +1,10 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.014';
+my $VERSION = '0.015';
 
 use Term::Choose::NCurses;
-use Term::Choose::LineFold;
+use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
 
 
 constant CONTROL_A  = -0x01;
@@ -134,8 +134,8 @@ submethod DESTROY () {
 }
 
 
-multi readline ( Str $prompt, Str $default ) is export { return Term::Form.new().readline( $prompt, $default ) }
-multi readline ( Str $prompt, %opt? )        is export { return Term::Form.new().readline( $prompt, %opt ) }
+multi readline ( Str $prompt, Str $default ) is export( :DEFAULT, :readline ) { return Term::Form.new().readline( $prompt, $default ) }
+multi readline ( Str $prompt, %opt? )        is export( :DEFAULT, :readline ) { return Term::Form.new().readline( $prompt, %opt ) }
 
 multi method readline ( Str $prompt, Str $default ) { return self!_readline( $prompt, { default => $default } ) }
 multi method readline ( Str $prompt, %opt? )        { return self!_readline( $prompt, %opt ) }
@@ -367,7 +367,7 @@ method !_prepare_key ( Int $idx ) {
     $f-key.=subst(   / \s /, ' ', :g );
     $f-key.=subst( / <:C> /, '',  :g );
     if $f-key_len > $!key_w {
-        return cut-to-printwidth( $f-key, $!key_w );
+        return to-printwidth( $f-key, $!key_w );
     }
     elsif $f-key_len < $!key_w {
         return " " x ( $!key_w - $f-key_len ) ~ $f-key;
@@ -471,7 +471,7 @@ method !_get_print_row ( Int $idx ) {
             $sep = $!sep_ro;
         }
         return
-            self!_prepare_key( $idx ) ~ $sep ~ cut-to-printwidth( $val, $!val_w );
+            self!_prepare_key( $idx ) ~ $sep ~ to-printwidth( $val, $!val_w );
     }
 }
 
@@ -540,7 +540,7 @@ method !_print_previous_page {
 }
 
 
-sub fillform ( @list, %opt? ) is export { return Term::Form.new().fillform( @list, %opt ) }
+sub fillform ( @list, %opt? ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, %opt ) }
 
 method fillform ( @orig_list, %!o? ) {
     my %valid = (
@@ -844,11 +844,11 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.014
+Version 0.015
 
 =head1 SYNOPSIS
 
-    use Term::Form;
+    use Term::Form :readline, :fillform;
 
     my @aoa = (
         [ 'name'           ],
@@ -872,6 +872,11 @@ Version 0.014
     $line = $new.readline( 'Prompt: ', { default => 'abc' } );
 
     @filled_form = $new.fillform( @aoa, { auto-up => 0 } );
+
+=head1 FUNCTIONAL INTERFACE
+
+Importing the subroutines explicitly (C<:name_of_the_subroutine>) might become compulsory (optional for now) with the
+next release.
 
 =head1 DESCRIPTION
 
