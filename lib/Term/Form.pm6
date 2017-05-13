@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.017';
+my $VERSION = '0.018';
 
 use Term::Choose::NCurses;
 use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
@@ -44,7 +44,7 @@ has Int $!sep_w;
 has Int @!len_keys;
 has Int $!key_w;
 
-has Str $!header;
+has Str @!header_lines;
 has Int $!nr_header_lines;
 
 has Int $!page;
@@ -95,10 +95,15 @@ sub _validate_options ( %opt, %valid, Int $list_end? ) {
             #}
         }
         when %valid{$key} eq 'Str' {
-            die "$key => not a string." if ! $value.isa( Str );
+             die "$key => {$value.perl} is not a string." if ! $value.isa( Str );
         }
-        when $value !~~ / ^ <{%valid{$key}}> $ / {
-            die "$key => '$value' is not a valid value.";
+        default {
+            when ! $value.isa( Int ) {
+                die "$key => {$value.perl} is not an integer.";
+            }
+            when $value !~~ / ^ <{%valid{$key}}> $ / {
+                die "$key => '$value' is not a valid value.";
+            }
         }
     }
 }
@@ -167,8 +172,10 @@ method !_readline ( $f-key = ': ', %!o? ) {
     $!val_w = $!avail_w - ( $!key_w + $!sep_w );
     self!_nr_header_lines();
     clear();
-    if $!header.defined {
-        mvaddstr( 0, 0, $!header );
+    if @!header_lines.elems {
+        for ^@!header_lines -> $row {
+            mvaddstr( $row, 0, @!header_lines[$row] );
+        }
     }
     my Int $beep;
 
@@ -201,8 +208,10 @@ method !_readline ( $f-key = ': ', %!o? ) {
             $!val_w = $!avail_w - ( $!key_w + $!sep_w );
             self!_nr_header_lines();
             clear();
-            if $!header.defined {
-                mvaddstr( 0, 0, $!header );
+            if @!header_lines.elems {
+                for ^@!header_lines -> $row {
+                    mvaddstr( $row, 0, @!header_lines[$row] );
+                }
             }
             next GET_KEY;
         }
@@ -423,17 +432,16 @@ method !_prepare_size ( Int $term_w, Int $term_h ) {
 
 method !_nr_header_lines {
     if ! %!o<header>.defined || %!o<header> eq '' {
-        $!header = Str;
+        @!header_lines = ();
         $!nr_header_lines = 0;
         return;
     }
-    $!header = line-fold( %!o<header>, $!avail_w, '', '' );
-    my $matches = $!header.subst-mutate( / \n /, "\n\r", :g ); #
-    if ! $matches {
+    @!header_lines = line-fold( %!o<header>, $!avail_w, '', '' );
+    if ! @!header_lines.elems {
         $!nr_header_lines = 1;
         return;
     }
-    $!nr_header_lines = $matches.elems + 1;
+    $!nr_header_lines = @!header_lines.elems + 1;
 }
 
 
@@ -506,8 +514,10 @@ method !_write_first_screen ( Int $curr_row ) {
         $!end_idx = @!list.end;
     }
     clear();
-    if $!header.defined {
-        mvaddstr( 0, 0, $!header );
+    if @!header_lines.elems {
+        for ^@!header_lines -> $row {
+            mvaddstr( $row, 0, @!header_lines[$row] );
+        }
     }
     self!_write_screen();
 }
@@ -843,7 +853,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.017
+Version 0.018
 
 =head1 SYNOPSIS
 
