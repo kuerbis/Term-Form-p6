@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.018';
+my $VERSION = '0.019';
 
 use Term::Choose::NCurses;
 use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
@@ -61,7 +61,7 @@ method new ( :%defaults, :$win=Term::Choose::NCurses::WINDOW ) {
         confirm   => 'Str',
         default   => 'Str',
         header    => 'Str',
-        ro        => 'Array',
+        ro        => 'List',
     );
     _validate_options( %defaults, %valid );
     _set_defaults( %defaults );
@@ -87,9 +87,9 @@ sub _validate_options ( %opt, %valid, Int $list_end? ) {
         when ! $value.defined {
             next;
         }
-        when %valid{$key} eq 'Array' {
-            die "$key => not an ARRAY reference." if ! $value.isa( Array );
-            die "$key => invalid array element"   if $value.grep( { / <-[0..9]> / } ); # Int;
+        when %valid{$key} eq 'List' {
+            die "$key => not an List." if ! $value.isa( List );
+            die "$key => invalid List element"   if $value.grep( { / <-[0..9]> / } ); # Int;
             #if $key eq 'ro' {
                 die "$key => value out of range." if $list_end.defined && $value.any > $list_end;
             #}
@@ -558,7 +558,7 @@ method fillform ( @orig_list, %!o? ) {
         back      => 'Str',
         confirm   => 'Str',
         header    => 'Str',
-        ro        => 'Array',
+        ro        => 'List',
     );
     @!list = @orig_list.deepmap( -> $e is copy { $e } );
     _validate_options( %!o, %valid, @!list.end ); # 
@@ -853,7 +853,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.018
+Version 0.019
 
 =head1 SYNOPSIS
 
