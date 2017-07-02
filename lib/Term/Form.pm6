@@ -1,7 +1,7 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.019';
+my $VERSION = '0.020';
 
 use Term::Choose::NCurses;
 use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
@@ -20,10 +20,10 @@ constant CONTROL_U  = -0x15;
 constant KEY_ESC    = -0x1b;
 
 
-has %.defaults;
+has %!defaults;
 has %!o;
 
-has Term::Choose::NCurses::WINDOW $.win;
+has Term::Choose::NCurses::WINDOW $!win;
 has Term::Choose::NCurses::WINDOW $!win_local;
 
 has @!pre;
@@ -51,8 +51,12 @@ has Int $!page;
 has Int $!pages;
 
 
+method new ( :$defaults, :$win=Term::Choose::NCurses::WINDOW ) {
+    self.bless( :$defaults, :$win );
+}
 
-method new ( :%defaults, :$win=Term::Choose::NCurses::WINDOW ) {
+submethod BUILD( :$defaults, :$win ) {
+    %!defaults := $defaults.Hash;
     my %valid = (
         mark-curr => '<[ 0 1 ]>', #
         auto-up   => '<[ 0 1 2 ]>',
@@ -63,10 +67,11 @@ method new ( :%defaults, :$win=Term::Choose::NCurses::WINDOW ) {
         header    => 'Str',
         ro        => 'List',
     );
-    _validate_options( %defaults, %valid );
-    _set_defaults( %defaults );
-    self.bless( :%defaults, :$win );
+    _validate_options( %!defaults, %valid );
+    _set_defaults( %!defaults );
+    $!win := $win;
 }
+
 
 sub _set_defaults ( %opt ) {
     %opt<auto-up>   //= 0;
@@ -139,11 +144,11 @@ submethod DESTROY () {
 }
 
 
-multi readline ( Str $prompt, Str $default ) is export( :DEFAULT, :readline ) { return Term::Form.new().readline( $prompt, $default ) }
-multi readline ( Str $prompt, %opt? )        is export( :DEFAULT, :readline ) { return Term::Form.new().readline( $prompt, %opt ) }
+multi readline ( Str $prompt, Str $default )        is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, $default ) }
+multi readline ( Str $prompt, %deprecated?, *%opt ) is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, %deprecated || %opt ) }
 
-multi method readline ( Str $prompt, Str $default ) { return self!_readline( $prompt, { default => $default } ) }
-multi method readline ( Str $prompt, %opt? )        { return self!_readline( $prompt, %opt ) }
+multi method readline ( Str $prompt, Str $default )        { self!_readline( $prompt, { default => $default } ) }
+multi method readline ( Str $prompt, %deprecated?, *%opt ) { self!_readline( $prompt, %deprecated || %opt ) }
 
 method !_readline ( $f-key = ': ', %!o? ) {
     my %valid = (
@@ -853,7 +858,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.019
+Version 0.020
 
 =head1 SYNOPSIS
 
@@ -869,18 +874,18 @@ Version 0.019
 
     # Functional interface:
 
-    my $line = readline( 'Prompt: ', { default => 'abc' } );
+    my $line = readline( 'Prompt: ', default<abc> );
 
-    my @filled_form = fillform( @aoa, { auto-up => 0 } );
+    my @filled_form = fillform( @aoa, :auto-up( 0 ) );
 
 
     # OO interface:
 
     my $new = Term::Form.new();
 
-    $line = $new.readline( 'Prompt: ', { default => 'abc' } );
+    $line = $new.readline( 'Prompt: ', :default<abc> );
 
-    @filled_form = $new.fillform( @aoa, { auto-up => 0 } );
+    @filled_form = $new.fillform( @aoa, :auto-up( 0 ) );
 
 =head1 FUNCTIONAL INTERFACE
 
@@ -928,7 +933,7 @@ The constructor method C<new> can be called with optional named arguments:
 
 =item defaults
 
-Expects as its value a hash. Sets the defaults for the instance. See L<#OPTIONS>.
+Sets the defaults (a list of key-value pairs) for the instance. See L<#OPTIONS>.
 
 =item win
 
@@ -945,10 +950,10 @@ C<readline> reads a line from STDIN.
 
 The fist argument is the prompt string.
 
-The optional second argument is a hash to set the different options. The keys/options are
+With the following arguments one can set the different options or instead it can be passed the default value (see option
+I<default>) as string.
 
-With the optional second argument it can be passed the default value (see option I<default>) as string or it can be
-passed the options as a hash. The options are
+The options are
 
 =item1 default
 
@@ -976,7 +981,7 @@ The first argument is an array of arrays. The arrays have 1 or 2 elements: the f
 second element is the value. The key is used as the prompt string for the "readline", the value is used as the default
 value for the "readline" (initial value of input).
 
-The optional second argument is a hash. The keys/options are
+With the following arguments it can be set theses options:
 
 =item1 header
 

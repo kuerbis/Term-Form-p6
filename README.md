@@ -8,7 +8,7 @@ Term::Form - Read lines from STDIN.
 VERSION
 =======
 
-Version 0.019
+Version 0.020
 
 SYNOPSIS
 ========
@@ -25,18 +25,18 @@ SYNOPSIS
 
     # Functional interface:
 
-    my $line = readline( 'Prompt: ', { default => 'abc' } );
+    my $line = readline( 'Prompt: ', default<abc> );
 
-    my @filled_form = fillform( @aoa, { auto-up => 0 } );
+    my @filled_form = fillform( @aoa, :auto-up( 0 ) );
 
 
     # OO interface:
 
     my $new = Term::Form.new();
 
-    $line = $new.readline( 'Prompt: ', { default => 'abc' } );
+    $line = $new.readline( 'Prompt: ', :default<abc> );
 
-    @filled_form = $new.fillform( @aoa, { auto-up => 0 } );
+    @filled_form = $new.fillform( @aoa, :auto-up( 0 ) );
 
 FUNCTIONAL INTERFACE
 ====================
@@ -86,7 +86,7 @@ The constructor method `new` can be called with optional named arguments:
 
   * defaults
 
-Expects as its value a hash. Sets the defaults for the instance. See [#OPTIONS](#OPTIONS).
+Sets the defaults (a list of key-value pairs) for the instance. See [#OPTIONS](#OPTIONS).
 
   * win
 
@@ -104,9 +104,9 @@ readline
 
 The fist argument is the prompt string.
 
-The optional second argument is a hash to set the different options. The keys/options are
+With the following arguments one can set the different options or instead it can be passed the default value (see option *default*) as string.
 
-With the optional second argument it can be passed the default value (see option *default*) as string or it can be passed the options as a hash. The options are
+The options are
 
   * default
 
@@ -133,7 +133,7 @@ fillform
 
 The first argument is an array of arrays. The arrays have 1 or 2 elements: the first element is the key and the optional second element is the value. The key is used as the prompt string for the "readline", the value is used as the default value for the "readline" (initial value of input).
 
-The optional second argument is a hash. The keys/options are
+With the following arguments it can be set theses options:
 
   * header
 
