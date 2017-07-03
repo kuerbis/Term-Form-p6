@@ -8,7 +8,7 @@ Term::Form - Read lines from STDIN.
 VERSION
 =======
 
-Version 0.020
+Version 0.021
 
 SYNOPSIS
 ========
@@ -90,7 +90,7 @@ Sets the defaults (a list of key-value pairs) for the instance. See [#OPTIONS](#
 
   * win
 
-Expects as its value a window object created by ncurses `initscr`.
+Expects as its value a `WINDOW` object - the return value of [NCurses](NCurses) `initscr`.
 
 If set, `readline` and `fillform` use this global window instead of creating their own without calling `endwin` to restores the terminal before returning.
 
@@ -176,7 +176,9 @@ To close the form and get the modified list select the "confirm" menu entry. If 
 REQUIREMENTS
 ============
 
-See [Term::Choose#REQUIREMENTS](Term::Choose#REQUIREMENTS).
+Requires `libncursesw.so.6`.
+
+See also [Term::Choose#REQUIREMENTS](Term::Choose#REQUIREMENTS).
 
 AUTHOR
 ======

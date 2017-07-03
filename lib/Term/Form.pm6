@@ -1,11 +1,17 @@
 use v6;
 unit class Term::Form;
 
-my $VERSION = '0.020';
+my $VERSION = '0.021';
 
-use Term::Choose::NCurses;
+%*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
+
+
+use NativeCall;
+use NCurses;
+use Term::Choose::NCursesAdd;
 use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
 
+sub get_wch(int32 is rw) returns int32  is native(&library) is export {*};
 
 constant CONTROL_A  = -0x01;
 constant CONTROL_B  = -0x02;
@@ -23,8 +29,8 @@ constant KEY_ESC    = -0x1b;
 has %!defaults;
 has %!o;
 
-has Term::Choose::NCurses::WINDOW $!win;
-has Term::Choose::NCurses::WINDOW $!win_local;
+has WINDOW $!win;
+has WINDOW $!win_local;
 
 has @!pre;
 has @!list;
@@ -51,7 +57,7 @@ has Int $!page;
 has Int $!pages;
 
 
-method new ( :$defaults, :$win=Term::Choose::NCurses::WINDOW ) {
+method new ( :$defaults, :$win=WINDOW ) {
     self.bless( :$defaults, :$win );
 }
 
@@ -121,15 +127,16 @@ method !_init_term {
     else {
         my int32 constant LC_ALL = 6;
         setlocale( LC_ALL, "" );
-        $!win_local = initscr;
+        $!win_local = initscr();
     }
     noecho();
     cbreak;
     keypad( $!win_local, True );
     curs_set( 1 );
     # disable mouse:
-    my Array[int32] $old;
-    my $s = mousemask( 0, $old );
+    #my Array[int32] $old;
+    #my $s = mousemask( 0, $old );
+    mousemask( 0, 0 );
 }
 
 
@@ -554,7 +561,7 @@ method !_print_previous_page {
 }
 
 
-sub fillform ( @list, %opt? ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, %opt ) }
+sub fillform ( @list, %deprecated?, *%opt ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, %deprecated || %opt ) }
 
 method fillform ( @orig_list, %!o? ) {
     my %valid = (
@@ -858,7 +865,7 @@ Term::Form - Read lines from STDIN.
 
 =head1 VERSION
 
-Version 0.020
+Version 0.021
 
 =head1 SYNOPSIS
 
@@ -937,7 +944,7 @@ Sets the defaults (a list of key-value pairs) for the instance. See L<#OPTIONS>.
 
 =item win
 
-Expects as its value a window object created by ncurses C<initscr>.
+Expects as its value a C<WINDOW> object - the return value of L<NCurses> C<initscr>.
 
 If set, C<readline> and C<fillform> use this global window instead of creating their own without calling C<endwin> to
 restores the terminal before returning.
@@ -1027,7 +1034,9 @@ the form, C<fillform> returns nothing.
 
 =head1 REQUIREMENTS
 
-See L<Term::Choose#REQUIREMENTS>.
+Requires C<libncursesw.so.6>.
+
+See also L<Term::Choose#REQUIREMENTS>.
 
 =head1 AUTHOR
 
