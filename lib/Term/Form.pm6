@@ -1,7 +1,6 @@
 use v6;
-unit class Term::Form;
+unit class Term::Form:ver<0.0.1>;
 
-my $VERSION = '0.021';
 
 %*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
 
@@ -862,10 +861,6 @@ method fillform ( @orig_list, %!o? ) {
 =head1 NAME
 
 Term::Form - Read lines from STDIN.
-
-=head1 VERSION
-
-Version 0.021
 
 =head1 SYNOPSIS
 

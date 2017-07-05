@@ -5,11 +5,6 @@ NAME
 
 Term::Form - Read lines from STDIN.
 
-VERSION
-=======
-
-Version 0.021
-
 SYNOPSIS
 ========
 
