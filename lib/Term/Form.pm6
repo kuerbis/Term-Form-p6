@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<0.0.1>;
+unit class Term::Form:ver<0.0.2>;
 
 
 %*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
@@ -157,6 +157,9 @@ multi method readline ( Str $prompt, Str $default )        { self!_readline( $pr
 multi method readline ( Str $prompt, %deprecated?, *%opt ) { self!_readline( $prompt, %deprecated || %opt ) }
 
 method !_readline ( $f-key = ': ', %!o? ) {
+    CATCH {
+        endwin();
+    }
     my %valid = (
         no-echo => '<[ 0 1 2 ]>',
         default => 'Str',
@@ -563,6 +566,9 @@ method !_print_previous_page {
 sub fillform ( @list, %deprecated?, *%opt ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, %deprecated || %opt ) }
 
 method fillform ( @orig_list, %!o? ) {
+    CATCH {
+        endwin();
+    }
     my %valid = (
         mark-curr => '<[ 0 1 ]>',
         auto-up   => '<[ 0 1 2 ]>',
