@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<0.0.2>;
+unit class Term::Form:ver<1.0.0>;
 
 
 %*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
@@ -29,7 +29,7 @@ has %!defaults;
 has %!o;
 
 has WINDOW $!win;
-has WINDOW $!win_local;
+has Bool $!reset_win;
 
 has @!pre;
 has @!list;
@@ -56,12 +56,13 @@ has Int $!page;
 has Int $!pages;
 
 
-method new ( :$defaults, :$win=WINDOW ) {
-    self.bless( :$defaults, :$win );
+method new () {
+    self.bless( defaults => %_ );
 }
 
 submethod BUILD( :$defaults, :$win ) {
     %!defaults := $defaults.Hash;
+    $!win = %!defaults<win>:delete // WINDOW;
     my %valid = (
         mark-curr => '<[ 0 1 ]>', #
         auto-up   => '<[ 0 1 2 ]>',
@@ -74,7 +75,6 @@ submethod BUILD( :$defaults, :$win ) {
     );
     _validate_options( %!defaults, %valid );
     _set_defaults( %!defaults );
-    $!win := $win;
 }
 
 
@@ -119,34 +119,24 @@ sub _validate_options ( %opt, %valid, Int $list_end? ) {
 }
 
 
+
 method !_init_term {
-    if $!win {
-        $!win_local = $!win;
-    }
-    else {
+    if ! $!win {
+        $!reset_win = True;
         my int32 constant LC_ALL = 6;
         setlocale( LC_ALL, "" );
-        $!win_local = initscr();
+        $!win = initscr();
     }
     noecho();
-    cbreak;
-    keypad( $!win_local, True );
+    cbreak();
+    keypad( $!win, True );
     curs_set( 1 );
-    # disable mouse:
-    #my Array[int32] $old;
-    #my $s = mousemask( 0, $old );
-    mousemask( 0, 0 );
+    mousemask( 0, 0 ); #
 }
-
 
 method !_end_term {
-    return if $!win;
+    return if ! $!reset_win;
     endwin();
-}
-
-
-submethod DESTROY () {
-    self!_end_term;
 }
 
 
@@ -180,8 +170,8 @@ method !_readline ( $f-key = ': ', %!o? ) {
     @!list = ( [ $f-key, $str ] );
     my Int $pos = $str.chars;
     self!_init_term();
-    my $term_w = getmaxx( $!win_local );
-    my $term_h = getmaxy( $!win_local );
+    my $term_w = getmaxx( $!win );
+    my $term_h = getmaxy( $!win );
     $!avail_w = $term_w - 1; #
     $!val_w = $!avail_w - ( $!key_w + $!sep_w );
     self!_nr_header_lines();
@@ -214,8 +204,8 @@ method !_readline ( $f-key = ': ', %!o? ) {
             }
             last WAIT;
         }
-        my $tmp_term_w = getmaxx( $!win_local );
-        my $tmp_term_h = getmaxy( $!win_local );
+        my $tmp_term_w = getmaxx( $!win );
+        my $tmp_term_h = getmaxy( $!win );
         if $tmp_term_w != $term_w || $tmp_term_h != $term_h {
             ( $term_w, $term_h ) = ( $tmp_term_w, $tmp_term_h );
             $!avail_w = $term_w - 1; #
@@ -599,8 +589,8 @@ method fillform ( @orig_list, %!o? ) {
     self!_length_longest_key();
     self!_init_term();
 
-    my $term_w = getmaxx( $!win_local );
-    my $term_h = getmaxy( $!win_local );
+    my $term_w = getmaxx( $!win );
+    my $term_h = getmaxy( $!win );
     self!_prepare_size( $term_w, $term_h );
     self!_write_first_screen( 0 );
 
@@ -634,8 +624,8 @@ method fillform ( @orig_list, %!o? ) {
             }
             last WAIT;
         }
-        my $tmp_term_w = getmaxx( $!win_local );
-        my $tmp_term_h = getmaxy( $!win_local );
+        my $tmp_term_w = getmaxx( $!win );
+        my $tmp_term_h = getmaxy( $!win );
         if $tmp_term_w != $term_w || $tmp_term_h != $term_h && $tmp_term_h {
             ( $term_w, $term_h ) = ( $tmp_term_w, $tmp_term_h );
             self!_prepare_size( $term_w, $term_h );
@@ -895,11 +885,6 @@ Term::Form - Read lines from STDIN.
 
     @filled_form = $new.fillform( @aoa, :auto-up( 0 ) );
 
-=head1 FUNCTIONAL INTERFACE
-
-Importing the subroutines explicitly (C<:name_of_the_subroutine>) might become compulsory (optional for now) with the
-next release.
-
 =head1 DESCRIPTION
 
 C<readline> reads a line from STDIN. As soon as C<Return> is pressed C<readline> returns the read string without the
@@ -937,18 +922,14 @@ C<Page-Down> or C<Strg-F>: Move forward one page.
 
 =head1 CONSTRUCTOR
 
-The constructor method C<new> can be called with optional named arguments:
+The constructor method C<new> can be called with named arguments. For the valid options see L<#OPTIONS>. Setting the
+options in C<new> overwrites the default values for the instance.
 
-=item defaults
+Additionally to the options mentioned below one can set the option L<win>. The opton L<win> expects as its value a
+C<WINDOW> object - the return value of L<NCurses> C<initscr>.
 
-Sets the defaults (a list of key-value pairs) for the instance. See L<#OPTIONS>.
-
-=item win
-
-Expects as its value a C<WINDOW> object - the return value of L<NCurses> C<initscr>.
-
-If set, C<readline> and C<fillform> use this global window instead of creating their own without calling C<endwin> to
-restores the terminal before returning.
+If set, C<choose>, C<choose-multi> and C<pause> use this global window instead of creating their own without calling
+C<endwin> to restores the terminal before returning.
 
 =head1 ROUTINES
 

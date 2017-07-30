@@ -33,11 +33,6 @@ SYNOPSIS
 
     @filled_form = $new.fillform( @aoa, :auto-up( 0 ) );
 
-FUNCTIONAL INTERFACE
-====================
-
-Importing the subroutines explicitly (`:name_of_the_subroutine`) might become compulsory (optional for now) with the next release.
-
 DESCRIPTION
 ===========
 
@@ -77,17 +72,11 @@ Only in `fillform`:
 CONSTRUCTOR
 ===========
 
-The constructor method `new` can be called with optional named arguments:
+The constructor method `new` can be called with named arguments. For the valid options see [#OPTIONS](#OPTIONS). Setting the options in `new` overwrites the default values for the instance.
 
-  * defaults
+Additionally to the options mentioned below one can set the option [win](win). The opton [win](win) expects as its value a `WINDOW` object - the return value of [NCurses](NCurses) `initscr`.
 
-Sets the defaults (a list of key-value pairs) for the instance. See [#OPTIONS](#OPTIONS).
-
-  * win
-
-Expects as its value a `WINDOW` object - the return value of [NCurses](NCurses) `initscr`.
-
-If set, `readline` and `fillform` use this global window instead of creating their own without calling `endwin` to restores the terminal before returning.
+If set, `choose`, `choose-multi` and `pause` use this global window instead of creating their own without calling `endwin` to restores the terminal before returning.
 
 ROUTINES
 ========
@@ -109,11 +98,11 @@ Set a initial value of input.
 
   * no-echo
 
-  * if set to `0`, the input is echoed on the screen.
+    * if set to `0`, the input is echoed on the screen.
 
-  * if set to `1`, "`*`" are displayed instead of the characters.
+    * if set to `1`, "`*`" are displayed instead of the characters.
 
-  * if set to `2`, no output is shown apart from the prompt string.
+    * if set to `2`, no output is shown apart from the prompt string.
 
 default: `0`
 
