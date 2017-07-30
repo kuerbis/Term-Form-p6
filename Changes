@@ -1,6 +1,9 @@
 Revision history for Term::Form
 
 
+1.0.1   2017-07-30
+        - Bugfix documentation
+
 1.0.0   2017-07-30
         - From hash parameter to slurpy hash parameter
 

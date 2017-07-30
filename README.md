@@ -76,7 +76,7 @@ The constructor method `new` can be called with named arguments. For the valid o
 
 Additionally to the options mentioned below one can set the option [win](win). The opton [win](win) expects as its value a `WINDOW` object - the return value of [NCurses](NCurses) `initscr`.
 
-If set, `choose`, `choose-multi` and `pause` use this global window instead of creating their own without calling `endwin` to restores the terminal before returning.
+If set, `readline` and `fillform` use this global window instead of creating their own without calling `endwin` to restores the terminal before returning.
 
 ROUTINES
 ========

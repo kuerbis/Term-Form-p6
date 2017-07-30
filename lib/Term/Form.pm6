@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.0.0>;
+unit class Term::Form:ver<1.0.1>;
 
 
 %*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
@@ -928,7 +928,7 @@ options in C<new> overwrites the default values for the instance.
 Additionally to the options mentioned below one can set the option L<win>. The opton L<win> expects as its value a
 C<WINDOW> object - the return value of L<NCurses> C<initscr>.
 
-If set, C<choose>, C<choose-multi> and C<pause> use this global window instead of creating their own without calling
+If set, C<readline> and C<fillform> use this global window instead of creating their own without calling
 C<endwin> to restores the terminal before returning.
 
 =head1 ROUTINES
