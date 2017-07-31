@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.0.1>;
+unit class Term::Form:ver<1.0.2>;
 
 
 %*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';

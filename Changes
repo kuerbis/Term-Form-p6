@@ -1,6 +1,9 @@
 Revision history for Term::Form
 
 
+1.0.2   2017-07-31
+        - Removed NativeCall from travis.yml - is core module
+
 1.0.1   2017-07-30
         - Bugfix documentation
 
