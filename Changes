@@ -1,6 +1,10 @@
 Revision history for Term::Form
 
 
+1.0.3   2018-01-16
+        - Set PERL6_NCURSES_LIB only if it is not defined
+        - Code refactoring
+
 1.0.2   2017-07-31
         - Removed NativeCall from travis.yml - is core module
 

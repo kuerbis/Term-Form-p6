@@ -1,8 +1,10 @@
 use v6;
-unit class Term::Form:ver<1.0.2>;
+unit class Term::Form:ver<1.0.3>;
 
 
-%*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
+if ! %*ENV<PERL6_NCURSES_LIB>.defined {
+    %*ENV<PERL6_NCURSES_LIB> = 'libncursesw.so.6';
+}
 
 
 use NativeCall;
@@ -25,10 +27,9 @@ constant CONTROL_U  = -0x15;
 constant KEY_ESC    = -0x1b;
 
 
-has %!defaults;
 has %!o;
 
-has WINDOW $!win;
+has WINDOW $.win;
 has Bool $!reset_win;
 
 has @!pre;
@@ -55,68 +56,17 @@ has Int $!nr_header_lines;
 has Int $!page;
 has Int $!pages;
 
+subset Int_0_to_2 of Int where * == 0|1|2;
+subset Int_0_or_1 of Int where * == 0|1;
 
-method new () {
-    self.bless( defaults => %_ );
-}
-
-submethod BUILD( :$defaults, :$win ) {
-    %!defaults := $defaults.Hash;
-    $!win = %!defaults<win>:delete // WINDOW;
-    my %valid = (
-        mark-curr => '<[ 0 1 ]>', #
-        auto-up   => '<[ 0 1 2 ]>',
-        no-echo   => '<[ 0 1 2 ]>',
-        back      => 'Str',
-        confirm   => 'Str',
-        default   => 'Str',
-        header    => 'Str',
-        ro        => 'List',
-    );
-    _validate_options( %!defaults, %valid );
-    _set_defaults( %!defaults );
-}
-
-
-sub _set_defaults ( %opt ) {
-    %opt<auto-up>   //= 0;
-    %opt<no-echo>   //= 0;
-    %opt<mark-curr> //= Any;
-    %opt<default>   //= '';
-    %opt<header>    //= Str;
-    %opt<confirm>   //= '<<';
-    %opt<back>      //= Str;
-    %opt<ro>        //= [];
-}
-
-sub _validate_options ( %opt, %valid, Int $list_end? ) {
-    for %opt.kv -> $key, $value {
-        when %valid{$key}:!exists { #
-            die "'$key' is not a valid option name";
-        }
-        when ! $value.defined {
-            next;
-        }
-        when %valid{$key} eq 'List' {
-            die "$key => not an List." if ! $value.isa( List );
-            die "$key => invalid List element"   if $value.grep( { / <-[0..9]> / } ); # Int;
-            #if $key eq 'ro' {
-                die "$key => value out of range." if $list_end.defined && $value.any > $list_end;
-            #}
-        }
-        when %valid{$key} eq 'Str' {
-             die "$key => {$value.perl} is not a string." if ! $value.isa( Str );
-        }
-        default {
-            when ! $value.isa( Int ) {
-                die "$key => {$value.perl} is not an integer.";
-            }
-            when $value !~~ / ^ <{%valid{$key}}> $ / {
-                die "$key => '$value' is not a valid value.";
-            }
-        }
-    }
-}
+has Int_0_or_1 $.mark-curr;
+has Int_0_to_2 $.auto-up    = 0;
+has Int_0_to_2 $.no-echo    = 0;
+has Str        $.back;
+has Str        $.confirm    = '<<';
+has Str        $.default    = '';
+has Str        $.header;
+has List       $.ro         = []; #
 
 
 
@@ -140,25 +90,21 @@ method !_end_term {
 }
 
 
-multi readline ( Str $prompt, Str $default )        is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, $default ) }
-multi readline ( Str $prompt, %deprecated?, *%opt ) is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, %deprecated || %opt ) }
+multi readline ( Str $prompt, Str $default ) is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, $default ) }
+multi readline ( Str $prompt, *%opt )        is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, |%opt ) }
 
-multi method readline ( Str $prompt, Str $default )        { self!_readline( $prompt, { default => $default } ) }
-multi method readline ( Str $prompt, %deprecated?, *%opt ) { self!_readline( $prompt, %deprecated || %opt ) }
+multi method readline ( Str $prompt, Str $default ) { self!_readline( $prompt, |{ default => $default } ) }
+multi method readline ( Str $prompt, *%opt )        { self!_readline( $prompt, |%opt ) }
 
-method !_readline ( $f-key = ': ', %!o? ) {
+method !_readline ( $f-key = ': ',
+        Int_0_to_2 :$no-echo = $!no-echo,
+        Str        :$default = $!default,
+        Str        :$header  = $!header
+    ) {
     CATCH {
         endwin();
     }
-    my %valid = (
-        no-echo => '<[ 0 1 2 ]>',
-        default => 'Str',
-        header  => 'Str',
-    );
-    _validate_options( %!o, %valid );
-    for %valid.keys -> $key {
-        %!o{$key} //= %!defaults{$key};
-    }
+    %!o = :$no-echo, :$default, :$header;
     %!o<ro> = ();
     #$!nr_header_lines = 0;
     $!sep = '';
@@ -553,26 +499,22 @@ method !_print_previous_page {
 }
 
 
-sub fillform ( @list, %deprecated?, *%opt ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, %deprecated || %opt ) }
+sub fillform ( @list, *%opt ) is export( :DEFAULT, :fillform ) { return Term::Form.new().fillform( @list, |%opt ) }
 
-method fillform ( @orig_list, %!o? ) {
+method fillform (
+        @orig_list,
+        Int_0_or_1 :$mark-curr = $!mark-curr,
+        Int_0_to_2 :$auto-up   = $!auto-up,
+        Str        :$back      = $!back,
+        Str        :$confirm   = $!confirm,
+        Str        :$header    = $!header,
+        List       :$ro        = $!ro
+    ) {
     CATCH {
         endwin();
     }
-    my %valid = (
-        mark-curr => '<[ 0 1 ]>',
-        auto-up   => '<[ 0 1 2 ]>',
-        back      => 'Str',
-        confirm   => 'Str',
-        header    => 'Str',
-        ro        => 'List',
-    );
     @!list = @orig_list.deepmap( -> $e is copy { $e } );
-    _validate_options( %!o, %valid, @!list.end ); # 
-    for %valid.keys -> $key {
-        %!o{$key} //= %!defaults{$key};
-    }
-
+    %!o = :$mark-curr, :$auto-up, :$back, :$confirm, :$header, :$ro;
     $!sep    = ': ';
     $!sep_ro = '| ';
     $!sep_w = print-columns( $!sep );
@@ -582,9 +524,9 @@ method fillform ( @orig_list, %!o? ) {
     }
 
     if %!o<back>.defined && %!o<back>.chars {
-        @!pre.push: [ %!o<back> ];
+        @!pre.push: [ %!o<back>, ];
     }
-    @!pre.push: [ %!o<confirm> ];
+    @!pre.push: [ %!o<confirm>, ];
     @!list.unshift: |@!pre;
     self!_length_longest_key();
     self!_init_term();
@@ -593,7 +535,6 @@ method fillform ( @orig_list, %!o? ) {
     my $term_h = getmaxy( $!win );
     self!_prepare_size( $term_w, $term_h );
     self!_write_first_screen( 0 );
-
     my ( $str, $pos ) = self!_str_and_pos();
     my Int $enter_col;
     my Int $enter_row;
