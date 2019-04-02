@@ -4,9 +4,8 @@
   ],
   "build-depends" : [ ],
   "depends" : [
-    "NativeCall",
-    "NCurses",
-    "Term::Choose"
+    "Term::termios",
+    "Term::Choose:ver<1.5.2+>"
   ],
   "description" : "Read lines from STDIN.",
   "license" : "Artistic-2.0",
@@ -21,5 +20,5 @@
   "test-depends" : [
     "Test"
   ],
-  "version" : "1.0.3"
+  "version" : "1.2.0"
 }
