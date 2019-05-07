@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.2.1>;
+unit class Term::Form:ver<1.2.2>;
 
 use Term::termios;
 
