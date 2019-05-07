@@ -1,6 +1,10 @@
 Revision history for Term::Form
 
 
+1.2.1   2019-05-07
+        - New option loop.
+        - New method copy_and_paste.
+
 1.2.0   2019-04-02
         - First release on CPAN
         - From ncurses to ANSI escapes

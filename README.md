@@ -63,7 +63,7 @@ Keys
 
 - `fill-form`: move up one row.
 
-- `readline` move back 10 characters.
+- `readline`: move back 10 characters.
 
 `Down-Arrow`:
 

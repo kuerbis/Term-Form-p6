@@ -1,11 +1,11 @@
 use v6;
-unit class Term::Form:ver<1.2.0>;
+unit class Term::Form:ver<1.2.1>;
 
 use Term::termios;
 
-use Term::Choose::ReadKey :read-key;
-use Term::Choose::LineFold :to-printwidth, :line-fold, :print-columns;
-use Term::Choose::Screen :ALL;
+use Term::Choose::ReadKey;
+use Term::Choose::LineFold;
+use Term::Choose::Screen;
 
 has %!o;
 has %!i;
@@ -42,6 +42,7 @@ subset Int_0_or_1 of Int where * == 0|1;
 
 has Int_0_or_1 $.show-context = 0;
 has Int_0_or_1 $.hide-cursor  = 1;
+has Int_0_or_1 $.loop         = 0; # private
 has Int_0_to_2 $.clear-screen = 0;
 has Int_0_to_2 $.auto-up      = 0;
 has Int_0_to_2 $.no-echo      = 0;
@@ -59,9 +60,85 @@ multi readline ( Str $prompt, *%opt )        is export( :DEFAULT, :readline ) { 
 multi method readline ( Str $prompt, Str $default ) { self!_readline( $prompt, |{ default => $default } ) }
 multi method readline ( Str $prompt, *%opt )        { self!_readline( $prompt, |%opt ) }
 
+
+sub copy_and_paste( *%opt ) is export( :DEFAULT, :copy_and_paste ) { Term::Form.new().copy_and_paste( |%opt ) };
+
+method copy_and_paste (
+        Int_0_to_2 :$clear-screen = $!clear-screen,
+        Str:D      :$info         = $!info,
+    ) {
+    %!o = :clear-screen( $clear-screen || 1 ), :$info; # ?
+    self!_init_term();
+    if $info.chars {
+        say $info;
+    }
+    my ( @lines, @tmp );
+
+    CHAR: loop {
+        if %!i<beep> {
+            self!_beep();
+            %!i<beep> = 0;
+        }
+        my $char = read-key( 0 );
+        if ! $char.defined {
+            self!_reset_term();
+            note "EOT: $!";
+            return;
+        }
+        given $char {
+            when '^D' {
+                if @tmp.elems {
+                    @lines.push: @tmp.join: '';
+                    @tmp = ();
+                }
+                else {
+                    self!_reset_term( 0 );
+                    return @lines.join: "\n";
+                }
+            }
+            when '^X' {
+                if @lines.elems || @tmp.elems {
+                    clear(); ##
+                    @lines = ();
+                    @tmp = ();
+                    if $info.chars {
+                        say $info;
+                    }
+                }
+                else {
+                    self!_reset_term( 0 );
+                    return;
+                }
+            }
+            when '^M' { # Enter
+                @lines.push: @tmp.join: '';
+                @tmp = ();
+                print "\n";
+            }
+            when /^\^(.)$/ {
+                my $cc = ( $0.ord - 64 ).chr;
+                @tmp.push: $cc;
+                print $cc;
+            }
+            when 'CursorUp' | 'CursorDown' | 'CursorRight' | 'CursorLeft' | 'CursorEnd' | 'CursorHome' {
+                %!i<beep> = 1;
+            }
+            when 'Backspace' | 'Delete' | 'PageUp' | 'PageDown' | 'Insert' | 'BackTab' {
+                %!i<beep> = 1;
+            }
+            default {
+                @tmp.push: $char;
+                print $char;
+            }
+        }
+    }
+}
+
+
 method !_beep {
     beep();
 }
+
 
 sub _sanitized_string ( $str is copy ) {
     if $str.defined {
@@ -202,6 +279,9 @@ method !_init_term {
     else {
         clr-to-bot;
     }
+    if $!loop {
+        show-cursor();
+    }
 }
 
 
@@ -214,6 +294,9 @@ method !_reset_term( $up ) {
         up( $up ) if $up;
         print "\r";
         clr-to-bot();
+    }
+    if $!loop {
+        hide-cursor();
     }
 }
 
@@ -258,7 +341,7 @@ method !_readline ( $prompt = ': ',
     ) {
     #CATCH {
     #}
-    %!o = :$no-echo, :$default, :$no-echo, :$clear-screen, :$show-context, :$info;
+    %!o = :$default, :$no-echo, :$clear-screen, :$show-context, :$info;
     #%!o<read-only> = ();
     self!_init_term();
     my $term_w = ( get-term-size )[0];
@@ -1169,7 +1252,7 @@ C<Up-Arrow>:
 
 - C<fill-form>: move up one row.
 
-- C<readline> move back 10 characters.
+- C<readline>: move back 10 characters.
 
 C<Down-Arrow>:
 
