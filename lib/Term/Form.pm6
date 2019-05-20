@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.2.2>;
+unit class Term::Form:ver<1.2.3>;
 
 use Term::termios;
 
@@ -215,7 +215,9 @@ method !_before_readline ( $opt, $m ) {
             }
             else {
                 %!i<keys>[0] = '';
-                @before_lines.unshift: %!i<prompt>;
+                if %!i<prompt>.chars { # p5 
+                    @before_lines.unshift: %!i<prompt>;
+                }
             }
         }
         %!i<pre_text> = ( |@info, |@before_lines ).join: "\n";
@@ -277,7 +279,7 @@ method !_init_term {
         clear;
     }
     else {
-        clr-to-bot;
+        clr-lines-to-bot();
     }
     if $!loop {
         show-cursor();
@@ -291,9 +293,12 @@ method !_reset_term( $up ) {
         restore-screen;
     }
     else {
-        up( $up ) if $up;
-        print "\r";
-        clr-to-bot();
+        if $up {
+            up( $up );
+        }
+        if ! $!loop {
+            clr-lines-to-bot();
+        }
     }
     if $!loop {
         hide-cursor();
@@ -362,8 +367,7 @@ method !_readline ( $prompt = ': ',
         if $up_before {
             up( $up_before );
         }
-        print "\r";
-        clr-to-bot();
+        clr-lines-to-bot();
         self!_before_readline( %!o, $m );
         $up_before = %!i<pre_text_row_count>;
         if %!i<pre_text>.chars {
@@ -866,8 +870,7 @@ method !_write_first_screen ( %!o, $list, $curr_row, $auto-up ) {
         clear();
     }
     else {
-        print "\r";
-        clr-to-bot();
+        clr-lines-to-bot();
     }
     if %!i<pre_text>.chars {
         print %!i<pre_text>, "\n";
@@ -1108,15 +1111,13 @@ method fill-form ( $orig_list,
                 }
                 if $auto-up == 2 {                                                               # if ENTER && "auto-up" == 2 && any row: jumps {back/0}
                     up( $up );
-                    print "\r";
-                    clr-to-bot();
+                    clr-lines-to-bot();
                     self!_write_first_screen( %!o, $list, 0, $auto-up );                         # cursor on <back>
                     $m = self!_string_and_pos( $list );
                 }
                 elsif %!i<curr_row> == $list.end {                                               # if ENTER && {last row}: jumps to the {first data row/2}
                     up( $up );
-                    print "\r";
-                    clr-to-bot();
+                    clr-lines-to-bot();
                     self!_write_first_screen( %!o, $list, %!i<pre>.elems, $auto-up );            # cursor on the first data row
                     $m = self!_string_and_pos( $list );
                     %!i<lock_ENTER> = 1;                                                          # set lock_ENTER when jumped automatically from the {last row} to the {first data row/2}
@@ -1171,8 +1172,7 @@ method !_print_next_page ( $list ) {
     %!i<begin_row> = %!i<end_row> + 1;
     %!i<end_row>   = %!i<end_row> + %!i<avail_h>;
     %!i<end_row>   = $list.end if %!i<end_row> > $list.end;
-    print "\r";
-    clr-to-bot();
+    clr-lines-to-bot();
     self!_write_screen( $list );
 }
 
@@ -1181,8 +1181,7 @@ method !_print_previous_page ( $list ) {
     %!i<end_row>   = %!i<begin_row> - 1;
     %!i<begin_row> = %!i<begin_row> - %!i<avail_h>;
     %!i<begin_row> = 0 if %!i<begin_row> < 0;
-    print "\r";
-    clr-to-bot();
+    clr-lines-to-bot();
     self!_write_screen( $list );
 }
 

@@ -1,6 +1,10 @@
 Revision history for Term::Form
 
 
+1.2.3   2019-05-20
+        - From clr-to-bot to clr-lines-to-bot.
+        - Bugfix in before_readline.
+
 1.2.2   2019-05-07
         - Term::Choose minimum version 1.5.3.
 
