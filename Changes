@@ -1,6 +1,10 @@
 Revision history for Term::Form
 
 
+1.2.4   2019-05-21
+        - Bugfix add_char.
+        - Update hide-cursor.
+
 1.2.3   2019-05-20
         - From clr-to-bot to clr-lines-to-bot.
         - Bugfix in before_readline.

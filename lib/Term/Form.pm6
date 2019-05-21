@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.2.3>;
+unit class Term::Form:ver<1.2.4>;
 
 use Term::termios;
 
@@ -214,10 +214,10 @@ method !_before_readline ( $opt, $m ) {
                 %!i<keys>[0] = %!i<prompt>;
             }
             else {
-                %!i<keys>[0] = '';
                 if %!i<prompt>.chars { # p5 
                     @before_lines.unshift: %!i<prompt>;
                 }
+                %!i<keys>[0] = '';
             }
         }
         %!i<pre_text> = ( |@info, |@before_lines ).join: "\n";
@@ -281,8 +281,8 @@ method !_init_term {
     else {
         clr-lines-to-bot();
     }
-    if $!loop {
-        show-cursor();
+    if %!o<hide-cursor> {
+        hide-cursor();
     }
 }
 
@@ -300,8 +300,13 @@ method !_reset_term( $up ) {
             clr-lines-to-bot();
         }
     }
-    if $!loop {
-        hide-cursor();
+    if %!o<hide-cursor> {
+        if $!loop {
+            hide-cursor();
+        }
+        else {
+            show-cursor();
+        }
     }
 }
 
@@ -341,12 +346,13 @@ method !_readline ( $prompt = ': ',
         Int_0_to_2 :$no-echo      = $!no-echo,
         Int_0_to_2 :$clear-screen = $!clear-screen,
         Int_0_or_1 :$show-context = $!show-context,
+        Int_0_or_1 :$hide-cursor  = $!hide-cursor,
         Str:D      :$info         = $!info,
         Str:D      :$default      = $!default,
     ) {
     #CATCH {
     #}
-    %!o = :$default, :$no-echo, :$clear-screen, :$show-context, :$info;
+    %!o = :$default, :$no-echo, :$clear-screen, :$show-context, :$info, :$hide-cursor;
     #%!o<read-only> = ();
     self!_init_term();
     my $term_w = ( get-term-size )[0];
@@ -368,6 +374,9 @@ method !_readline ( $prompt = ': ',
             up( $up_before );
         }
         clr-lines-to-bot();
+        if %!o<hide-cursor> {
+            hide-cursor();
+        }
         self!_before_readline( %!o, $m );
         $up_before = %!i<pre_text_row_count>;
         if %!i<pre_text>.chars {
@@ -585,6 +594,10 @@ method !_add_char ( $m, $char ) {
     $m<p_pos>++;
     $m<p_str_w> += $char_w;
     $m<str_w>   += $char_w;
+    # no '<' if:
+    if ! $m<diff> && $m<p_pos> < %!i<avail_w>  + %!i<arrow_w> { # p5
+        $m<avail_w> = %!i<avail_w> + %!i<arrow_w>;
+    }
     while $m<p_pos> < $m<p_str>.end {
         if $m<p_str_w> <= $m<avail_w> {
             last;
@@ -685,7 +698,8 @@ method !_print_readline ( %!o, $m ) {
         print "\r" ~ %!i<keys>[$i];         # in readline no separator
         return;
     }
-    my $print_str = "\r" ~ %!i<keys>[$i] ~ %!i<seps>[$i];
+    print "\r" ~ %!i<keys>[$i] ~ %!i<seps>[$i];
+    my $print_str = '';
     # left arrow:
     if $m<diff> {
         $print_str ~= %!i<arrow_left>;
@@ -704,6 +718,9 @@ method !_print_readline ( %!o, $m ) {
     my $back_to_pos = 0;
     for $m<p_str>[ $m<p_pos> .. $m<p_str>.end ] {
         $back_to_pos += $_[1];
+    }
+    if %!o<hide-cursor> {
+        show-cursor();
     }
     print $print_str;
     if $back_to_pos {
@@ -745,7 +762,7 @@ method !_prepare_width ( $term_w ) {
     %!i<avail_w> = $term_w - ( %!i<max_key_w> + %!i<sep>.chars + %!i<arrow_w> );
     # Subtract %!i<arrow_w> for the '<' before the string.
     # In each case where no '<'-prefix is required (diff==0) %!i<arrow_w> is added again.
-    # Routines where $m<arrow_w> is added:  _left, _bspace, _home, _ctrl_u, _delete
+    # Routines where $m<arrow_w> is added:  _left, _bspace, _home, _ctrl_u, _delete, _add_char
     # The required space (1) for the cursor (or the '>') behind the string is already subtracted in get-term-size
     %!i<th> = %!i<avail_w> div 5;
     %!i<th> = 40 if %!i<th> > 40;
@@ -866,23 +883,26 @@ method !_write_first_screen ( %!o, $list, $curr_row, $auto-up ) {
     if %!i<end_row> > $list.end {
         %!i<end_row> = $list.end;
     }
+    %!i<seps> = [];
+    %!i<keys> = [];
     if %!o<clear-screen> {
         clear();
     }
     else {
         clr-lines-to-bot();
     }
+    if %!o<hide-cursor> {
+        hide-cursor();
+    }
     if %!i<pre_text>.chars {
         print %!i<pre_text>, "\n";
     }
-    %!i<seps> = [];
-    %!i<keys> = [];
     self!_write_screen( $list );
 }
 
 
 method fill-form ( $orig_list,
-        Int_0_or_1 :$hide-cursor   = $!hide-cursor,
+        Int_0_or_1 :$hide-cursor  = $!hide-cursor,
         Int_0_to_2 :$auto-up      = $!auto-up,
         Int_0_to_2 :$clear-screen = $!clear-screen,
         Str:D      :$info         = $!info,
@@ -893,7 +913,7 @@ method fill-form ( $orig_list,
     ) {
     #CATCH {
     #}
-    %!o = :$hide-cursor, :$auto-up, :$clear-screen, :$info, :$prompt, :$back, :$confirm, :$read-only; ##
+    %!o = :$hide-cursor, :$auto-up, :$clear-screen, :$info, :$prompt, :$back, :$confirm, :$read-only;
     my @tmp;
     @tmp.push: %!o<info>   if %!o<info>.chars;
     @tmp.push: %!o<prompt> if %!o<prompt>.chars;
@@ -921,24 +941,21 @@ method fill-form ( $orig_list,
     self!_write_first_screen( %!o, $list, 0, $auto-up );
     my $m = self!_string_and_pos( $list );
     my $k = 0;
-    my $hidden_cursor = 0;
+    #my $hidden_cursor = 0;
 
     CHAR: loop {
         my $locked = 0;
         if %!i<curr_row> == %!i<read-only>.any {
             $locked = 1;
         }
-        if $list[%!i<curr_row>][0] eq %!o<confirm> | %!o<back> {
-            if %!o<hide-cursor> {
-                hide-cursor();
-                $hidden_cursor = 1;
-            }
-        }
         if %!i<beep> {
             self!_beep();
             %!i<beep> = 0;
         }
         else {
+            if %!o<hide-cursor> {
+                hide-cursor();
+            }
             self!_print_current_row( %!o, $list, $m );
         }
         my $char = read-key( 0 );
@@ -960,10 +977,6 @@ method fill-form ( $orig_list,
         # reset '$m<avail_w>' to default:
         $m<avail_w> = %!i<avail_w>;
         self!_calculate_threshold( $m );
-        if $hidden_cursor {
-            show-cursor();
-            $hidden_cursor = 0;
-        }
 
         given $char {
             when 'Backspace' | '^H' {
