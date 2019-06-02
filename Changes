@@ -1,6 +1,10 @@
 Revision history for Term::Form
 
 
+1.2.5   2019-06-02
+        - Escape sequence subroutines without print.
+        - Perl6 minimum version 6.d.
+
 1.2.4   2019-05-21
         - Bugfix add_char.
         - Update hide-cursor.

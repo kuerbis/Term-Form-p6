@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.2.4>;
+unit class Term::Form:ver<1.2.5>;
 
 use Term::termios;
 
@@ -98,7 +98,7 @@ method copy_and_paste (
             }
             when '^X' {
                 if @lines.elems || @tmp.elems {
-                    clear(); ##
+                    print clear; ##
                     @lines = ();
                     @tmp = ();
                     if $info.chars {
@@ -136,7 +136,7 @@ method copy_and_paste (
 
 
 method !_beep {
-    beep();
+    print beep;
 }
 
 
@@ -214,7 +214,7 @@ method !_before_readline ( $opt, $m ) {
                 %!i<keys>[0] = %!i<prompt>;
             }
             else {
-                if %!i<prompt>.chars { # p5 
+                if %!i<prompt>.chars { #
                     @before_lines.unshift: %!i<prompt>;
                 }
                 %!i<keys>[0] = '';
@@ -274,15 +274,15 @@ method !_init_term {
     $termios.setattr(:DRAIN);
     if %!o<clear-screen> {
         if %!o<clear-screen> == 2 {
-            save-screen;
+            print save-screen;
         }
-        clear;
+        print clear;
     }
     else {
-        clr-lines-to-bot();
+        print clr-lines-to-bot;
     }
     if %!o<hide-cursor> {
-        hide-cursor();
+        print hide-cursor;
     }
 }
 
@@ -290,22 +290,22 @@ method !_init_term {
 method !_reset_term( $up ) {
     $!saved_termios.setattr(:DRAIN);
     if %!o<clear-screen> == 2 {
-        restore-screen;
+        print restore-screen;
     }
     else {
         if $up {
-            up( $up );
+            print up( $up );
         }
         if ! $!loop {
-            clr-lines-to-bot();
+            print clr-lines-to-bot;
         }
     }
     if %!o<hide-cursor> {
         if $!loop {
-            hide-cursor();
+            print hide-cursor;
         }
         else {
-            show-cursor();
+            print show-cursor;
         }
     }
 }
@@ -355,7 +355,7 @@ method !_readline ( $prompt = ': ',
     %!o = :$default, :$no-echo, :$clear-screen, :$show-context, :$info, :$hide-cursor;
     #%!o<read-only> = ();
     self!_init_term();
-    my $term_w = ( get-term-size )[0];
+    my $term_w = get-term-width();
     my $m = self!_init_readline( %!o, $term_w, $prompt );
     my $big_step = 10;
     my $up_before = 0;
@@ -365,17 +365,17 @@ method !_readline ( $prompt = ': ',
             self!_beep();
             %!i<beep> = 0;
         }
-        my $tmp_term_w = ( get-term-size )[0];
+        my $tmp_term_w = get-term-width();
         if $tmp_term_w != $term_w {
             $term_w = $tmp_term_w;
             $m = self!_init_readline( %!o, $term_w, $prompt );
         }
         if $up_before {
-            up( $up_before );
+            print up( $up_before );
         }
-        clr-lines-to-bot();
+        print clr-lines-to-bot;
         if %!o<hide-cursor> {
-            hide-cursor();
+            print hide-cursor;
         }
         self!_before_readline( %!o, $m );
         $up_before = %!i<pre_text_row_count>;
@@ -385,7 +385,7 @@ method !_readline ( $prompt = ': ',
         self!_after_readline( %!o, $m );
         if %!i<post_text>.chars {
             print "\n" ~ %!i<post_text>;
-            up( %!i<post_text_row_count> );
+            print up( %!i<post_text_row_count> );
         }
         self!_print_readline( %!o, $m );
         my $char = read-key( 0 );
@@ -595,7 +595,7 @@ method !_add_char ( $m, $char ) {
     $m<p_str_w> += $char_w;
     $m<str_w>   += $char_w;
     # no '<' if:
-    if ! $m<diff> && $m<p_pos> < %!i<avail_w>  + %!i<arrow_w> { # p5
+    if ! $m<diff> && $m<p_pos> < %!i<avail_w>  + %!i<arrow_w> {
         $m<avail_w> = %!i<avail_w> + %!i<arrow_w>;
     }
     while $m<p_pos> < $m<p_str>.end {
@@ -691,8 +691,7 @@ sub _fill_from_begin {
 
 
 method !_print_readline ( %!o, $m ) {
-    print "\r";
-    clr-to-eol();
+    print "\r" ~ clr-to-eol;
     my $i = %!i<curr_row>;
     if %!o<no-echo> && %!o<no-echo> == 2 {  # 'no-echo' only in readline
         print "\r" ~ %!i<keys>[$i];         # in readline no separator
@@ -720,11 +719,11 @@ method !_print_readline ( %!o, $m ) {
         $back_to_pos += $_[1];
     }
     if %!o<hide-cursor> {
-        show-cursor();
+        print show-cursor;
     }
     print $print_str;
     if $back_to_pos {
-        left( $back_to_pos );
+        print left( $back_to_pos );
     }
 }
 
@@ -802,8 +801,7 @@ method !_prepare_hight ( $list, $term_w, $term_h ) {
 
 
 method !_print_current_row ( %!o, $list, $m ) {
-    print "\r";
-    clr-to-eol();
+    print "\r" ~ clr-to-eol;
     if %!i<curr_row> < %!i<pre>.elems {
         print "\e[7m" ~ $list[%!i<curr_row>][0] ~ "\e[0m";
     }
@@ -867,11 +865,11 @@ method !_write_screen ( $list ) {
             $page_number = sprintf( '%d/%d', %!i<page>, %!i<pages> ).substr: 0, %!i<term_w>;
         }
         print "\n", $page_number;
-        up( %!i<avail_h> - ( %!i<curr_row> - %!i<begin_row> ) ); #
+        print up( %!i<avail_h> - ( %!i<curr_row> - %!i<begin_row> ) ); #
     }
     else {
         %!i<page> = 1;
-        up( %!i<end_row> - %!i<curr_row> );
+        print up( %!i<end_row> - %!i<curr_row> );
     }
  }
 
@@ -886,13 +884,13 @@ method !_write_first_screen ( %!o, $list, $curr_row, $auto-up ) {
     %!i<seps> = [];
     %!i<keys> = [];
     if %!o<clear-screen> {
-        clear();
+        print clear;
     }
     else {
-        clr-lines-to-bot();
+        print clr-lines-to-bot;
     }
     if %!o<hide-cursor> {
-        hide-cursor();
+        print hide-cursor;
     }
     if %!i<pre_text>.chars {
         print %!i<pre_text>, "\n";
@@ -954,7 +952,7 @@ method fill-form ( $orig_list,
         }
         else {
             if %!o<hide-cursor> {
-                hide-cursor();
+                print hide-cursor;
             }
             self!_print_current_row( %!o, $list, $m );
         }
@@ -966,7 +964,7 @@ method fill-form ( $orig_list,
         }
         my ( $tmp_term_w, $tmp_term_h ) = get-term-size();
         if $tmp_term_w != $term_w || $tmp_term_h != $term_h && $tmp_term_h < ( $list.elems + 1 ) {
-            up( %!i<curr_row> + %!i<pre_text_row_count> );
+            print up( %!i<curr_row> + %!i<pre_text_row_count> );
             ( $term_w, $term_h ) = ( $tmp_term_w, $tmp_term_h );
             self!_length_longest_key( $list );
             self!_prepare_width( $term_w );
@@ -1036,7 +1034,7 @@ method fill-form ( $orig_list,
                     $m = self!_string_and_pos( $list );
                     if %!i<curr_row> >= %!i<begin_row> {
                         self!_reset_previous_row( $list, %!i<curr_row> + 1 );
-                        up( 1 );
+                        print up( 1 );
                     }
                     else {
                         self!_print_previous_page( $list );
@@ -1053,10 +1051,10 @@ method fill-form ( $orig_list,
                     $m = self!_string_and_pos( $list );
                     if %!i<curr_row> <= %!i<end_row> {
                         self!_reset_previous_row( $list, %!i<curr_row> - 1 );
-                        down( 1 );
+                        print down( 1 );
                     }
                     else {
-                        up( %!i<end_row> - %!i<begin_row> );
+                        print up( %!i<end_row> - %!i<begin_row> );
                         self!_print_next_page( $list );
                     }
                 }
@@ -1069,13 +1067,13 @@ method fill-form ( $orig_list,
                     }
                     else {
                         self!_reset_previous_row( $list, %!i<curr_row> );
-                        up( %!i<curr_row> );
+                        print up( %!i<curr_row> );
                         %!i<curr_row> = 0;
                         $m = self!_string_and_pos( $list );
                     }
                 }
                 else {
-                    up( %!i<curr_row> - %!i<begin_row> );
+                    print up( %!i<curr_row> - %!i<begin_row> );
                     %!i<curr_row> = %!i<begin_row> - %!i<avail_h>;
                     $m = self!_string_and_pos( $list );
                     self!_print_previous_page( $list );
@@ -1090,13 +1088,13 @@ method fill-form ( $orig_list,
                     else {
                         self!_reset_previous_row( $list, %!i<curr_row> );
                         my $rows = %!i<end_row> - %!i<curr_row>;
-                        down( $rows );
+                        print down( $rows );
                         %!i<curr_row> = %!i<end_row>;
                         $m = self!_string_and_pos( $list );
                     }
                 }
                 else {
-                    up( %!i<curr_row> - %!i<begin_row> );
+                    print up( %!i<curr_row> - %!i<begin_row> );
                     %!i<curr_row> = %!i<end_row> + 1;
                     $m = self!_string_and_pos( $list );
                     self!_print_next_page( $list );
@@ -1123,32 +1121,32 @@ method fill-form ( $orig_list,
                     return [ ( 0 .. $list.end ).map({ [ $orig_list[$_][0], $list[$_][1] ] }) ];
                 }
                 if $auto-up == 2 {                                                               # if ENTER && "auto-up" == 2 && any row: jumps {back/0}
-                    up( $up );
-                    clr-lines-to-bot();
+                    print up( $up );
+                    print clr-lines-to-bot();
                     self!_write_first_screen( %!o, $list, 0, $auto-up );                         # cursor on <back>
                     $m = self!_string_and_pos( $list );
                 }
                 elsif %!i<curr_row> == $list.end {                                               # if ENTER && {last row}: jumps to the {first data row/2}
-                    up( $up );
-                    clr-lines-to-bot();
+                    print up( $up );
+                    print clr-lines-to-bot();
                     self!_write_first_screen( %!o, $list, %!i<pre>.elems, $auto-up );            # cursor on the first data row
                     $m = self!_string_and_pos( $list );
-                    %!i<lock_ENTER> = 1;                                                          # set lock_ENTER when jumped automatically from the {last row} to the {first data row/2}
+                    %!i<lock_ENTER> = 1;                                                         # set lock_ENTER when jumped automatically from the {last row} to the {first data row/2}
                 }
                 else {
-                    if $auto-up == 1 && %!i<curr_row> == %!i<pre>.elems && %!i<lock_ENTER> {      # if ENTER && "auto-up" == 1 $$ "curr_row" == {first data row/2} && lock_ENTER is true:
-                        %!i<beep> = 1;                                                            # set "auto-up" temporary to 2 so a second ENTER moves the cursor to {back/0}
+                    if $auto-up == 1 && %!i<curr_row> == %!i<pre>.elems && %!i<lock_ENTER> {     # if ENTER && "auto-up" == 1 $$ "curr_row" == {first data row/2} && lock_ENTER is true:
+                        %!i<beep> = 1;                                                           # set "auto-up" temporary to 2 so a second ENTER moves the cursor to {back/0}
                         $auto-up = 2;
                         next CHAR;
                     }
                     %!i<curr_row>++;
-                    $m = self!_string_and_pos( $list );                                           # or go to the next row if not on the last row
+                    $m = self!_string_and_pos( $list );                                          # or go to the next row if not on the last row
                     if %!i<curr_row> <= %!i<end_row> {
                         self!_reset_previous_row( $list, %!i<curr_row> - 1 );
-                        down( 1 );
+                        print down( 1 );
                     }
                     else {
-                        up( $up );                                                                # or else to the next page
+                        print up( $up );                                                         # or else to the next page
                         self!_print_next_page( $list );
                     }
                 }
@@ -1175,9 +1173,7 @@ method fill-form ( $orig_list,
 
 
 method !_reset_previous_row ( $list, $idx ) {
-    print "\r";
-    clr-to-eol();
-    print self!_get_row( $list, $idx );
+    print "\r" ~ clr-to-eol() ~ self!_get_row( $list, $idx );
 }
 
 
@@ -1185,7 +1181,7 @@ method !_print_next_page ( $list ) {
     %!i<begin_row> = %!i<end_row> + 1;
     %!i<end_row>   = %!i<end_row> + %!i<avail_h>;
     %!i<end_row>   = $list.end if %!i<end_row> > $list.end;
-    clr-lines-to-bot();
+    print clr-lines-to-bot();
     self!_write_screen( $list );
 }
 
@@ -1194,7 +1190,7 @@ method !_print_previous_page ( $list ) {
     %!i<end_row>   = %!i<begin_row> - 1;
     %!i<begin_row> = %!i<begin_row> - %!i<avail_h>;
     %!i<begin_row> = 0 if %!i<begin_row> < 0;
-    clr-lines-to-bot();
+    print clr-lines-to-bot();
     self!_write_screen( $list );
 }
 
@@ -1314,7 +1310,7 @@ default) as a string.
 
 1 - clear the screen before printing the choices
 
-2 - use the alternate screen (uses the control sequence C<1049>)
+2 - use the alternate screen
 
 default: disabled
 
@@ -1364,7 +1360,7 @@ The first argument can be followed by the different options:
 
 1 - clear the screen before printing the choices
 
-2 - use the alternate screen (uses the control sequence C<1049>)
+2 - use the alternate screen
 
 default: disabled
 

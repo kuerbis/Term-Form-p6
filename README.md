@@ -114,7 +114,7 @@ With the following arguments one can set the different options or instead it can
 
 1 - clear the screen before printing the choices
 
-2 - use the alternate screen (uses the control sequence `1049`)
+2 - use the alternate screen
 
 default: disabled
 
@@ -163,7 +163,7 @@ The first argument can be followed by the different options:
 
 1 - clear the screen before printing the choices
 
-2 - use the alternate screen (uses the control sequence `1049`)
+2 - use the alternate screen
 
 default: disabled
 
