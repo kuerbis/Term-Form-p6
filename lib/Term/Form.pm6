@@ -1,5 +1,5 @@
 use v6;
-unit class Term::Form:ver<1.2.5>;
+unit class Term::Form:ver<1.2.6>;
 
 use Term::termios;
 
@@ -52,13 +52,6 @@ has Str:D      $.default      = '';
 has Str:D      $.info         = '';
 has Str:D      $.prompt       = '';
 has List       $.read-only    = [];
-
-
-multi readline ( Str $prompt, Str $default ) is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, $default ) }
-multi readline ( Str $prompt, *%opt )        is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, |%opt ) }
-
-multi method readline ( Str $prompt, Str $default ) { self!_readline( $prompt, |{ default => $default } ) }
-multi method readline ( Str $prompt, *%opt )        { self!_readline( $prompt, |%opt ) }
 
 
 sub copy_and_paste( *%opt ) is export( :DEFAULT, :copy_and_paste ) { Term::Form.new().copy_and_paste( |%opt ) };
@@ -342,6 +335,12 @@ method !_init_readline ( %!o, $term_w, $prompt ) {
 }
 
 
+multi readline ( Str $prompt, Str $default ) is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, $default ) }
+multi readline ( Str $prompt, *%opt )        is export( :DEFAULT, :readline ) { Term::Form.new().readline( $prompt, |%opt ) }
+
+multi method readline ( Str $prompt, Str $default ) { self!_readline( $prompt, |{ default => $default } ) }
+multi method readline ( Str $prompt, *%opt )        { self!_readline( $prompt, |%opt ) }
+
 method !_readline ( $prompt = ': ',
         Int_0_to_2 :$no-echo      = $!no-echo,
         Int_0_to_2 :$clear-screen = $!clear-screen,
@@ -419,9 +418,15 @@ method !_readline ( $prompt = ': ',
             when 'Backspace'   | '^H' { self!_bspace( $m ) }
             when 'Delete'      | '^D' { self!_delete( $m ) }
             when '^X' {
-                #print "\n"; #
-                self!_reset_term( %!i<pre_text_row_count> ); # + 1
-                return;
+                if $m<str>.elems {
+                    my $list = [ [ %!i<prompt>, '' ], ];
+                    $m = self!_string_and_pos( $list );
+                }
+                else {
+                    #print "\n"; #
+                    self!_reset_term( %!i<pre_text_row_count> ); # + 1
+                    return;
+                }
             }
             when '^M' { # Enter
                 #print "\n"; #
@@ -899,6 +904,8 @@ method !_write_first_screen ( %!o, $list, $curr_row, $auto-up ) {
 }
 
 
+sub fill-form ( $orig_list, *%opt ) is export( :DEFAULT, :fill-form ) { Term::Form.new().fill-form( $orig_list, |%opt ) }
+
 method fill-form ( $orig_list,
         Int_0_or_1 :$hide-cursor  = $!hide-cursor,
         Int_0_to_2 :$auto-up      = $!auto-up,
@@ -938,8 +945,7 @@ method fill-form ( $orig_list,
     self!_prepare_hight( $list, $term_w, $term_h );
     self!_write_first_screen( %!o, $list, 0, $auto-up );
     my $m = self!_string_and_pos( $list );
-    my $k = 0;
-    #my $hidden_cursor = 0;
+    my $k = 0; # non ENTER key pressed
 
     CHAR: loop {
         my $locked = 0;
@@ -1100,6 +1106,27 @@ method fill-form ( $orig_list,
                     self!_print_next_page( $list );
                 }
             }
+            when '^X' {
+                my $up = %!i<curr_row> - %!i<begin_row>;
+                if $m<str>.elems {
+                    $list[%!i<curr_row>][1] = '';
+                    $m = self!_string_and_pos( $list );
+                }
+                elsif $list[%!i<curr_row>][0] eq %!o<back> {
+                    self!_reset_term( $up );
+                    return;
+                }
+                else { # 
+                    ##print "\n"; #
+                    #self!_reset_term( $up ); # + 1
+                    #return;
+
+                    print up( $up );
+                    print clr-lines-to-bot();
+                    self!_write_first_screen( %!o, $list, 0, 2 );
+                    $m = self!_string_and_pos( $list );
+                }
+            }
             when '^M' { # Enter
                 %!i<lock_ENTER> = 0 if $k;                                                       # any previously pressed key other than ENTER removes lock_ENTER
                 if $auto-up == 2 && %!o<auto-up> == 1 && ! %!i<lock_ENTER> {                     # a removed lock_ENTER resets "auto-up" from 2 to 1 if the 2 was originally a 1
@@ -1111,7 +1138,7 @@ method fill-form ( $orig_list,
                 $k = 0;                                                                          # if ENTER set $k to 0
                 my $up = %!i<curr_row> - %!i<begin_row>;
                 $up += %!i<pre_text_row_count> if %!i<pre_text_row_count>;
-                if $list[%!i<curr_row>][0] eq %!o<back> {                                        # if ENTER on   {back/0}: leave and return nothing
+                if $list[%!i<curr_row>][0] eq %!o<back> {                                        # if ENTER on {back/0}: leave and return nothing
                     self!_reset_term( $up );
                     return;
                 }
@@ -1171,7 +1198,6 @@ method fill-form ( $orig_list,
 }
 
 
-
 method !_reset_previous_row ( $list, $idx ) {
     print "\r" ~ clr-to-eol() ~ self!_get_row( $list, $idx );
 }
@@ -1218,7 +1244,7 @@ Term::Form - Read lines from STDIN.
 
     # Functional interface:
 
-    my $line = readline( 'Prompt: ', default<abc> );
+    my $line = readline( 'Prompt: ', :default<abc> );
 
     my @filled_form = fill-form( @aoa, :auto-up( 0 ) );
 
@@ -1256,6 +1282,8 @@ C<Home> or C<Ctrl-A>: Move to the start of the line.
 
 C<End> or C<Ctrl-E>: Move to the end of the line.
 
+C<Ctrl-X>: If the input puffer is not empty, the input puffer is cleared, else returns nothing (undef).
+
 C<Up-Arrow>:
 
 - C<fill-form>: move up one row.
@@ -1267,10 +1295,6 @@ C<Down-Arrow>:
 - C<fill-form>: move down one row.
 
 - C<readline>: move forward 10 characters.
-
-Only in C<readline>:
-
-C<Ctrl-X>: C<readline> returns nothing (undef).
 
 Only in C<fill-form>:
 

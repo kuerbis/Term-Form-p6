@@ -1,6 +1,11 @@
 Revision history for Term::Form
 
 
+1.2.6   2019-07-11
+        - Ctrl-X: if not empty clears the input puffer else returns undef.
+        - 'fill-form' available as function.
+        - Bugfix in the documentation.
+
 1.2.5   2019-06-02
         - Escape sequence subroutines without print.
         - Perl6 minimum version 6.d.

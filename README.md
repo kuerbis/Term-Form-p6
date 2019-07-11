@@ -20,7 +20,7 @@ SYNOPSIS
 
     # Functional interface:
 
-    my $line = readline( 'Prompt: ', default<abc> );
+    my $line = readline( 'Prompt: ', :default<abc> );
 
     my @filled_form = fill-form( @aoa, :auto-up( 0 ) );
 
@@ -59,6 +59,8 @@ Keys
 
 `End` or `Ctrl-E`: Move to the end of the line.
 
+`Ctrl-X`: If the input puffer is not empty, the input puffer is cleared, else returns nothing (undef).
+
 `Up-Arrow`:
 
 - `fill-form`: move up one row.
@@ -70,10 +72,6 @@ Keys
 - `fill-form`: move down one row.
 
 - `readline`: move forward 10 characters.
-
-Only in `readline`:
-
-`Ctrl-X`: `readline` returns nothing (undef).
 
 Only in `fill-form`:
 
